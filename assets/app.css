@@ -54,7 +54,17 @@ table.simple th { background: #f0f4f8; }
 
 /* ---------- layout with navigator ---------- */
 .layout { display: grid; grid-template-columns: 1fr 230px; gap: 16px; align-items: start; }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .navigator { position: static !important; order: -1; } }
+.layout > *, .guide > * { min-width: 0; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .navigator { position: static !important; order: -1; padding: 10px; }
+  .navgrid { grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .navgrid a { font-size: 11px; padding: 4px 0; }
+  .q-body { padding: 12px 10px 4px; }
+  .doc { padding: 6px 14px 24px; }
+  .doc table { display: block; overflow-x: auto; }
+  .doc code { white-space: normal; word-break: break-word; }
+}
 .navigator { position: sticky; top: 64px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
 .navigator h4 { margin: 0 0 8px; font-size: 14px; }
 .navgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
@@ -158,3 +168,4 @@ figure.dg figcaption { font-size: 13px; color: var(--muted); margin-top: 4px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
 @media print { .topbar, .toc, .controls, .navigator { display: none !important; } .guide, .layout { display: block; } body { background: #fff; } }
+@media (max-width: 600px) { .topbar { position: static; } .navigator, .toc { top: 8px; } }
