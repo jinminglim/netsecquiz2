@@ -13,7 +13,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / "src"
-PAGES = ["index.html", "guide.html"]
+PAGES = ["index.html", "quiz.html", "guide.html"]
 
 LINK_RE = re.compile(r'<link rel="stylesheet" href="\.\./(assets/[^"]+\.css)">')
 SCRIPT_RE = re.compile(r'<script src="\.\./(assets/[^"]+\.js)"></script>')

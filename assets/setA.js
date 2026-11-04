@@ -240,20 +240,20 @@ ciscoasa(config)# access-group OUT2DMZ in interface dmz`)}
 ${out(`ciscoasa# show conn
 3 in use, 5 most used
 TCP outside  23.1.2.10:51544 dmz  192.168.2.100:80, idle 0:00:02, bytes 3150, flags UIO
-TCP inside   10.0.0.25:50112 dmz  192.168.2.100:80, idle 0:00:05, bytes 1830, flags UIO
-TCP inside   10.0.0.37:49870 outside 45.10.20.30:443, idle 0:00:01, bytes 6120, flags UIO`)}
+TCP dmz  192.168.2.100:80 inside  10.0.0.25:50112, idle 0:00:05, bytes 1830, flags UIO
+TCP outside  45.10.20.30:443 inside  10.0.0.37:49870, idle 0:00:01, bytes 6120, flags UIO`)}
 <p>Which statements are correct?</p>`,
-        o: ['All three entries are TCP connections that are up, with data seen in both the inbound and outbound directions.',
+        o: ['All three entries are TCP connections that are up, with data seen from both the initiator and the responder.',
           'The connection from 23.1.2.10 exists only because of the ACL on the outside interface.',
           'Return traffic from 45.10.20.30 to 10.0.0.37 is allowed because it matches a state-table entry, even though the outside ACL does not permit TCP 443 to 10.0.0.37.',
           'If Inside User 1 now pings the DMZ server, an ICMP entry will appear in this table.',
           'The DMZ Web Server initiated the connection with 10.0.0.25.'],
         a: [0, 1, 2],
-        x: `<p>ASA connection flags: <b>U</b> = up, <b>I</b> = inbound data, <b>O</b> = outbound data (A ✔).</p>
+        x: `<p>ASA 9.x connection flags: <b>U</b> = up, <b>I</b> = initiator data, <b>O</b> = responder data (older versions called them inbound/outbound data) (A ✔).</p>
 <ul><li>B ✔: outside (0) → dmz (50) is lower-to-higher, so only the ACL allows it.</li>
 <li>C ✔: this is stateful filtering. Once 10.0.0.37 opened the connection (100 → 0), return packets match the entry and are not checked against the outside ACL.</li>
 <li>D ✘: ICMP is not inspected by default, so no ICMP connection entries are created (and the reply would be dropped). That only changes after <code>inspect icmp</code>.</li>
-<li>E ✘: the entry shows inside 10.0.0.25:50112 (ephemeral port) → dmz :80, so the inside user initiated it.</li></ul>`
+<li>E ✘: 10.0.0.25 uses the random high port 50112 and the server uses port 80, so the inside user is the client that started it. The ASA lists the lower-security side first, so the order of the two addresses doesn’t tell you who started the connection; the ports do.</li></ul>`
       },
       {
         topic: 'ASA', type: 'mcq',

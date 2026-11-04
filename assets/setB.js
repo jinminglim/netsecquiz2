@@ -184,7 +184,7 @@ ciscoasa(config)# access-group INSIDE_OUT in interface inside`)}
           'Only the entry for the outside user, because the inside user’s connection is trusted and not tracked.',
           'No entries, because the DMZ has a lower security level than the inside.'],
         a: [0],
-        x: `<p>The firewall only creates a connection entry for traffic it <b>permits</b>. Inside (100) → DMZ (50) is allowed and appears as <code>TCP inside 10.0.0.25:xxxxx dmz 192.168.2.100:80 … flags UIO</code>.</p>
+        x: `<p>The firewall only creates a connection entry for traffic it <b>permits</b>. Inside (100) → DMZ (50) is allowed and appears as <code>TCP dmz 192.168.2.100:80 inside 10.0.0.25:xxxxx … flags UIO</code> (the lower-security side is listed first).</p>
 <p>The outside user’s SYN (0 → 50) is dropped before any state is created. After an ACL is added in Part 3, you would see a second entry from outside.</p>`
       },
       {

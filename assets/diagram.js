@@ -548,6 +548,41 @@
     ]
   });
 
+  // Ladder diagrams shared by the guide and the Easy Learn page
+  P.synSeq = () => seq({ w: 480, h: 220,
+      actors: [{ id: 'A', name: 'Attacker (spoofed src)', x: 110, w: 160 }, { id: 'S', name: 'Web Server', x: 390, w: 110 }],
+      msgs: [{ from: 'A', to: 'S', y: 60, t: 'SYN (src = random)', color: '#c0392b' },
+        { from: 'S', to: 'A', y: 100, t: 'SYN-ACK → spoofed IP', color: '#1f618d', lost: true },
+        { from: 'A', to: 'S', y: 140, t: 'SYN, SYN, SYN …', color: '#c0392b' }],
+      notes: [{ x: 398, y: 180, t: 'SYN-RECV backlog full', color: '#c0392b', bold: true }, { x: 398, y: 194, t: '(512 in the lab)' }] });
+  P.interceptSeq = () => seq({ w: 520, h: 220,
+      actors: [{ id: 'C', name: 'Client', x: 70, w: 80 }, { id: 'F', name: 'Firepower', x: 260, w: 100 }, { id: 'S', name: 'Server', x: 450, w: 80 }],
+      msgs: [{ from: 'C', to: 'F', y: 60, t: 'SYN', color: '#c0392b' }, { from: 'F', to: 'C', y: 95, t: 'SYN-ACK (cookie)', color: '#1f618d' },
+        { from: 'C', to: 'F', y: 130, t: 'ACK (real clients only)', color: '#1e8449' }, { from: 'F', to: 'S', y: 165, t: 'SYN → … connect', color: '#1e8449' }],
+      notes: [{ x: 260, y: 205, t: 'spoofed SYNs never reach the server', a: 'middle', bold: true }] });
+  P.slowSeq = () => seq({ w: 600, h: 230,
+      actors: [{ id: 'A', name: 'Attacker (slowhttptest)', x: 130, w: 170 }, { id: 'S', name: 'Web Server :80', x: 470, w: 140 }],
+      msgs: [{ from: 'A', to: 'S', y: 60, t: 'TCP handshake completes (ESTABLISHED, not embryonic)', color: '#1e8449' },
+        { from: 'A', to: 'S', y: 100, t: 'GET / HTTP/1.1\\r\\n Host: …\\r\\n', color: '#c0392b' },
+        { from: 'A', to: 'S', y: 140, t: 'X-a: 1\\r\\n (≈10 s later)', color: '#c0392b' },
+        { from: 'A', to: 'S', y: 180, t: 'X-a: 2\\r\\n (≈10 s later) … never \\r\\n\\r\\n', color: '#c0392b' }],
+      notes: [{ x: 300, y: 218, t: '× hundreds of connections → all server slots reserved', a: 'middle', bold: true, color: '#c0392b' }] });
+  P.tacSeq = () => seq({ w: 470, h: 420,
+      actors: [{ id: 'C', name: 'AAA client', x: 100, w: 100 }, { id: 'S', name: 'TACACS+ server', x: 370, w: 130 }],
+      msgs: [{ from: 'C', to: 'S', y: 55, t: 'START (authentication)' }, { from: 'S', to: 'C', y: 85, t: 'REPLY – request username' },
+        { from: 'C', to: 'S', y: 115, t: 'CONTINUE – username' }, { from: 'S', to: 'C', y: 145, t: 'REPLY – request password' },
+        { from: 'C', to: 'S', y: 175, t: 'CONTINUE – password' }, { from: 'S', to: 'C', y: 205, t: 'REPLY – PASS', color: '#1e8449' },
+        { from: 'C', to: 'S', y: 265, t: 'Authorization REQUEST', color: '#8e44ad' }, { from: 'S', to: 'C', y: 295, t: 'RESPONSE (priv-lvl / view)', color: '#8e44ad' },
+        { from: 'C', to: 'S', y: 340, t: 'Accounting REQUEST (start)', color: '#b9770e' }, { from: 'S', to: 'C', y: 370, t: 'RESPONSE', color: '#b9770e' }],
+      notes: [{ x: 235, y: 232, t: 'TCP 49 · whole body encrypted', a: 'middle', bold: true }, { x: 235, y: 405, t: '…Stop record at logout', a: 'middle' }] });
+  P.radSeq = () => seq({ w: 470, h: 400,
+      actors: [{ id: 'C', name: 'AAA client', x: 100, w: 100 }, { id: 'S', name: 'RADIUS server', x: 370, w: 130 }],
+      msgs: [{ from: 'C', to: 'S', y: 70, t: 'Access-Request (user, encrypted password)' },
+        { from: 'S', to: 'C', y: 115, t: 'Access-Accept (+ priv-lvl / view AV-pairs)', color: '#1e8449' },
+        { from: 'C', to: 'S', y: 200, t: 'Accounting-Request (Start)', color: '#b9770e' }, { from: 'S', to: 'C', y: 240, t: 'Accounting-Response', color: '#b9770e' },
+        { from: 'C', to: 'S', y: 310, t: 'Accounting-Request (Stop)', color: '#b9770e' }, { from: 'S', to: 'C', y: 350, t: 'Accounting-Response', color: '#b9770e' }],
+      notes: [{ x: 235, y: 150, t: 'authentication + authorization done (UDP 1812)', a: 'middle', bold: true }, { x: 235, y: 280, t: 'UDP 1813', a: 'middle', bold: true }] });
+
   global.NetDiag = { render, seq, presets: P, esc };
 
   /* ---------- helpers for question authors ---------- */

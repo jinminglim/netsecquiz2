@@ -260,7 +260,8 @@
         <p>3 sets × 50 questions with lab topologies drawn, CLI configs, and full explanations.</p></div>
       <div class="grid">${setTiles}
         <div class="tile"><h3>Mock Quiz (18 Q)</h3><p>Real quiz length (17–18 questions, 1% each). Random mix across all topics and sets.</p><div class="meta">Re-generate any time for a fresh mix.</div><a class="btn" href="#mock">Start mock</a></div>
-        <div class="tile"><h3>Study Guide</h3><p>Every key concept, command, show-output, calculation and exam trap for Topics 2 &amp; 3, with diagrams.</p><a class="btn" href="guide.html">Open guide</a></div>
+        <div class="tile"><h3>Easy Learn</h3><p>Plain-language explanations, simple scenarios, traps and annotated outputs for every topic, plus “try any scenario” tools.</p><a class="btn" href="index.html">Open Easy Learn</a></div>
+        <div class="tile"><h3>Full Study Guide</h3><p>Every key concept, command, show-output, calculation and exam trap for Topics 2 &amp; 3, with diagrams.</p><a class="btn" href="guide.html">Open guide</a></div>
       </div>
       <div class="panel"><h2>How the real quiz is marked (and why it matters)</h2>
         <p>The Quiz 1 statistics in the photos give it away. Multi-Select questions use D2L's <b>“Correct Answers”</b> scheme, where <b>every option is marked on its own</b>. You earn 1/n of the mark for each option you tick correctly <i>or leave blank correctly</i>. Check: on the IPSG question, 62% ticked the only correct option and 47/34/40/40% ticked the four wrong ones. The per-option average is (0.62+0.53+0.66+0.60+0.60)/5 = <b>0.60</b>, which is exactly the reported “Average Grade 0.6/1”. The smurf question works out to 0.57, also an exact match.</p>

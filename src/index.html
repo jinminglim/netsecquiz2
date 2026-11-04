@@ -3,28 +3,1290 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NetSec Quiz 2 Practice — Topic 2 &amp; 3 (ICT2217)</title>
+<title>Quiz 2 Easy Learn</title>
 <link rel="stylesheet" href="../assets/app.css">
+<link rel="stylesheet" href="../assets/learn.css">
 </head>
 <body>
 <header class="topbar"><div class="inner">
   <div class="brand">NetSec Quiz 2 <small>ICT2217 · Topic 2 &amp; 3</small></div>
   <nav class="nav">
-    <a href="#home">Home</a>
-    <a href="#A">Set A</a>
-    <a href="#B">Set B</a>
-    <a href="#C">Set C</a>
-    <a href="#mock">Mock (18 Q)</a>
-    <a href="guide.html">Study Guide</a>
+    <a href="index.html" class="active">Easy Learn</a>
+    <a href="quiz.html#home">Quiz Home</a>
+    <a href="quiz.html#A">Set A</a>
+    <a href="quiz.html#B">Set B</a>
+    <a href="quiz.html#C">Set C</a>
+    <a href="quiz.html#mock">Mock (18 Q)</a>
+    <a href="guide.html">Full Guide</a>
   </nav>
 </div></header>
-<main class="wrap" id="view"><p>Loading…</p></main>
-<div class="toast" id="toast"></div>
-<noscript><p style="padding:20px">This practice quiz needs JavaScript enabled.</p></noscript>
+
+<main class="wrap" id="top">
+
+<div class="hero2">
+  <h1>Quiz 2: Easy Learn</h1>
+  <p>Every Topic 2 &amp; 3 lab explained simply. For each topic you get the idea in plain words, a picture, the commands, <b>the outputs you must be able to read</b>, <b>what happens in different scenarios</b>, and <b>the traps</b>.</p>
+  <p>The green <b>“Try it”</b> boxes let you change the scenario yourself (ACL, firewall settings, AAA servers up or down, log level, NTP times, NetFlow keys) and see the result with the reason.</p>
+  <div class="links"><a href="#t-acl">Start with topic 1 ↓</a><a href="#t-check">Last-minute checklist ↓</a><a href="quiz.html#A">Practice quiz (150 Q)</a><a href="guide.html">Full study guide</a></div>
+  <div class="progress"><div class="track"><div id="progress-bar"></div></div><small id="progress-txt"></small></div>
+</div>
+
+<nav class="chips" id="topics" aria-label="Topics">
+  <a href="#t-acl">1 · ACL</a><a href="#t-asa">2 · Firepower/ASA</a><a href="#t-syn">3 · SYN flood</a><a href="#t-slow">4 · Slowloris</a>
+  <a href="#t-oob">5 · OoB &amp; VRF</a><a href="#t-ssh">6 · Jump host &amp; SSH</a><a href="#t-srv">7 · Supermicro &amp; Proxmox</a>
+  <a href="#t-authn">8 · AAA Authentication</a><a href="#t-authz">9 · AAA Authorization</a><a href="#t-acct">10 · AAA Accounting</a>
+  <a href="#t-ntp">11 · NTP</a><a href="#t-syslog">12 · Syslog</a><a href="#t-nf">13 · NetFlow</a><a href="#t-check">★ Checklist</a>
+</nav>
+
+<div class="card">
+  <h2>How to crack ANY scenario question</h2>
+  <div class="four">
+    <div><b class="n">1</b><b>Find the real source IP.</b> A router or switch that pings without <code>source</code> uses the IP of the interface the packet <i>leaves</i> from.</div>
+    <div><b class="n">2</b><b>Walk the path.</b> At every interface ask: is there an ACL <b>in</b> where it enters? An ACL <b>out</b> where it leaves?</div>
+    <div><b class="n">3</b><b>First match wins.</b> If no line matches, the invisible <b>deny any</b> drops it.</div>
+    <div><b class="n">4</b><b>Check the reply too.</b> Routers forget conversations. The firewall remembers TCP/UDP, but <b>not ping</b> unless <code>inspect icmp</code>.</div>
+    <div><b class="n">5</b><b>AAA:</b> server dead or unreachable = <b>ERROR</b> → try the next method. Server says “no” = <b>FAIL</b> → stop.</div>
+    <div><b class="n">6</b><b>Logs:</b> a smaller number is more serious. <code>logging trap N</code> sends levels <b>0 to N</b>.</div>
+  </div>
+  <p class="note" style="margin-top:10px">Marking: in Multi-Select questions <b>each option is marked on its own</b> (1/n each). Treat every option as a separate True/False and tick the ones you believe are true.</p>
+</div>
+
+<!-- =====================================================================
+     1. ACL
+     ===================================================================== -->
+<section class="topic" id="t-acl" data-topic="acl">
+<div class="t-head"><span class="num">1</span><h2>ACL: Access Control Lists</h2><span class="lab">Lab 2.1a · 2.1b</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>An ACL is a list of <b>permit</b> and <b>deny</b> rules that a router or Layer-3 switch checks against packets on <b>one interface, in one direction</b> (in or out).</div>
+<div class="analogy"><b class="k">Think of it like</b>A bouncer with a printed list. He reads from the top, and the <b>first</b> line that matches you decides. He stops reading there. If no line matches, you are refused, because there is an invisible “deny everyone” at the bottom.</div>
+
+<div class="grid2">
+<div>
+<h3>The rules that decide every answer</h3>
+<ol class="rules">
+<li>Read <b>top → bottom</b>. The <b>first match</b> wins and the rest are ignored.</li>
+<li>There is an invisible <b><code>deny any</code></b> at the end. It is <b>not shown and not counted</b> in <code>show access-lists</code>.</li>
+<li><b>Standard</b> ACL (numbers 1–99, 1300–1999) checks the <b>source IP only</b>, so put it <b>near the destination</b>. <b>Extended</b> ACL (100–199, 2000–2699) checks protocol, source, destination and ports, so put it <b>near the source</b>.</li>
+<li><b>One ACL per interface, per direction.</b> A second <code>ip access-group … in</code> <b>replaces</b> the first.</li>
+<li><b>IN</b> = checked as packets <i>arrive</i>. This includes packets <b>to the router itself</b> (pings to it, OSPF hellos, SSH). <b>OUT</b> = checked as packets <i>leave</i>, but packets <b>made by the router itself are NOT checked</b>.</li>
+<li>Routers don’t remember conversations. A ping works only if the request <b>and</b> the reply both get through.</li>
+</ol>
+</div>
+<figure class="dg" data-dg="aclLab" data-opts='{"lo1":true}'><figcaption>Lab 2.1 topology (static routes in 2.1a, OSPF in 2.1b)</figcaption></figure>
+</div>
+
+<h3><span class="ico">🎭</span> Wildcard masks in 10 seconds</h3>
+<p><b>0 = must match, 1 = don’t care.</b> Wildcard = 255.255.255.255 − subnet mask (do it octet by octet: 255 − 224 = 31).</p>
+<table class="t"><tr><th>You want</th><th>Write</th><th>You want</th><th>Write</th></tr>
+<tr><td>a /24 network</td><td><code>192.168.10.0 0.0.0.255</code></td><td>one host</td><td><code>host 192.168.20.3</code> (= 0.0.0.0)</td></tr>
+<tr><td>a /27 (32 addresses)</td><td><code>209.165.200.224 0.0.0.31</code></td><td>everything</td><td><code>any</code> (= 255.255.255.255)</td></tr>
+<tr><td>a /28 (16 addresses)</td><td><code>10.0.1.0 0.0.0.15</code></td><td>a /30 link</td><td><code>10.1.1.0 0.0.0.3</code></td></tr>
+<tr><td>a /29 (8 addresses)</td><td><code>10.0.0.0 0.0.0.7</code></td><td>only EVEN IPs of 172.16.0.0/16</td><td><code>172.16.0.0 0.0.255.254</code></td></tr></table>
+
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>R1(config)# access-list 1 permit 192.168.10.0 0.0.0.255           ! standard, numbered
+R1(config)# access-list 100 permit tcp host 192.168.10.3 host 10.2.2.1 eq 22 log
+R1(config)# ip access-list extended WEB-POLICY                        ! named extended
+R1(config-ext-nacl)# permit tcp 192.168.20.0 0.0.0.255 host 10.1.1.1 eq 443
+R1(config-ext-nacl)# 15 permit icmp any any echo                      ! insert as line 15
+R1(config-ext-nacl)# no 20                                            ! delete only line 20
+R1(config)# ip access-list resequence WEB-POLICY 100 5               ! renumber 100, 105, 110…
+R1(config)# interface g1/0/24
+R1(config-if)# ip access-group 1 in                                   ! apply: in or out
+R1# clear access-list counters</pre>
+
+<h3><span class="ico">🖥️</span> Outputs to know (and how to read them)</h3>
+<div class="ann"><div class="cap">show access-lists: what the ACL contains and how often each line matched</div>
+<div class="row hl"><code>DSW2# show access-lists</code><span></span></div>
+<div class="row"><code>Standard IP access list 1</code><span>Type and number/name. Standard = source IP only.</span></div>
+<div class="row"><code>    10 permit 192.168.10.0, wildcard bits 0.0.0.255 (8 matches)</code><span><b>10</b> = sequence number (auto, steps of 10). <b>(8 matches)</b> = 8 packets hit this line.</span></div>
+<div class="row"><code>    20 permit 192.168.30.0, wildcard bits 0.0.0.255</code><span>No “(matches)” = nothing has matched this line yet.</span></div>
+<div class="row"><code>Extended IP access list 100</code><span></span></div>
+<div class="row"><code>    10 permit tcp host 192.168.10.3 host 10.2.2.1 eq 22 log (22 matches)</code><span><b>log</b> = each match also creates a <code>%SEC-6-IPACCESSLOGP</code> syslog message (severity 6).</span></div>
+<div class="row"><code>    (implicit deny any — never displayed)</code><span>Denied packets are <b>not counted</b> anywhere. Add <code>deny any</code> yourself to see a counter.</span></div>
+</div>
+<div class="ann"><div class="cap">show ip interface: the ONLY command that tells you the direction</div>
+<div class="row hl"><code>DSW2# show ip interface g1/0/24</code><span></span></div>
+<div class="row"><code>GigabitEthernet1/0/24 is up, line protocol is up</code><span></span></div>
+<div class="row"><code>  Internet address is 10.2.2.1/30</code><span></span></div>
+<div class="row"><code>  Outgoing access list is not set</code><span>No ACL in the <b>out</b> direction.</span></div>
+<div class="row"><code>  Inbound access list is 1</code><span>ACL 1 is applied <b>in</b>bound here.</span></div>
+</div>
+<div class="ann"><div class="cap">Ping results on a Cisco device</div>
+<div class="row hl"><code>DSW1# ping 192.168.20.3</code><span>No source given → uses the exit interface IP (10.1.1.1).</span></div>
+<div class="row"><code>Sending 5, 100-byte ICMP Echos to 192.168.20.3, timeout is 2 seconds:</code><span></span></div>
+<div class="row"><code>U.U.U</code><span><b>U</b> = an ICMP “unreachable” came back. A router whose ACL denies a packet sends “administratively prohibited” (rate-limited, hence U.U.U). <b>.</b> = no reply (timeout). <b>!</b> = reply received.</span></div>
+<div class="row"><code>Success rate is 0 percent (0/5)</code><span>All 5 failed.</span></div>
+</div>
+<div class="ann"><div class="cap">Errors and log lines</div>
+<div class="row"><code>R1(config)# access-list 150 permit 192.168.10.0 0.0.0.255
+% Invalid input detected at '^' marker.</code><span>150 is an <b>extended</b> number, so IOS expects a protocol (ip/tcp/udp/icmp) after permit.</span></div>
+<div class="row"><code>%SEC-6-IPACCESSLOGP: list 100 permitted tcp 192.168.10.3(51544) -&gt; 10.2.2.1(22), 1 packet</code><span>From the <code>log</code> keyword. The <b>6</b> means informational. A syslog server with <code>logging trap 4</code> will NOT receive it.</span></div>
+</div>
+
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario (Lab 2.1 topology)</th><th>Result</th><th>Why</th></tr>
+<tr class="hd"><td colspan="3">Standard ACL placement: <code>access-list 10 deny 192.168.10.0 0.0.0.255</code> + <code>access-list 10 permit any</code></td></tr>
+<tr><td>ACL 10 <b>in</b> on DSW1 VLAN 1. PC-A pings PC-B</td><td class="r-ko">✘ fails</td><td>PC-A’s packets are dropped as they enter VLAN 1.</td></tr>
+<tr><td>Same. PC-A pings R1 Lo0 (209.165.200.225)</td><td class="r-ko">✘ fails</td><td>A standard ACL near the source blocks PC-A from <b>everything</b> (over-filtering).</td></tr>
+<tr><td>Same. PC-A pings its own gateway 192.168.10.1</td><td class="r-ko">✘ fails</td><td>An inbound ACL also filters packets <b>to the switch itself</b>.</td></tr>
+<tr><td>Same ACL moved <b>out</b> on DSW2 VLAN 1. PC-A pings R1 Lo0</td><td class="r-ok">✔ works</td><td>Correct placement: only traffic going <i>into</i> PC-B’s LAN is checked.</td></tr>
+<tr class="hd"><td colspan="3">Lab 2.1a: ACL 1 permits 192.168.10.0/24 and 192.168.30.0/24, applied <b>in</b> on DSW2 G1/0/24</td></tr>
+<tr><td>PC-A pings PC-B</td><td class="r-ok">✔ works</td><td>Source 192.168.10.3 matches line 10.</td></tr>
+<tr><td>DSW1 runs <code>ping 192.168.20.3</code> (no source)</td><td class="r-ko">✘ fails</td><td>The source is DSW1’s exit IP <b>10.1.1.1</b>, which hits the implicit deny.</td></tr>
+<tr><td>DSW1 extended ping with source 192.168.30.1 (Lo0)</td><td class="r-ok">✔ works</td><td>The source matches line 20.</td></tr>
+<tr class="hd"><td colspan="3">Lab 2.1a: BRANCH-OFFICE-POLICY (<code>permit host 192.168.20.3</code>, <code>permit 192.168.40.0 0.0.0.255</code>) <b>out</b> on DSW1 VLAN 1</td></tr>
+<tr><td>PC-B pings PC-A</td><td class="r-ok">✔ works</td><td>Source 192.168.20.3 is permitted.</td></tr>
+<tr><td>DSW2 extended ping to PC-A with source 192.168.20.1</td><td class="r-ko">✘ fails</td><td>Only host .20.3 of that LAN is permitted.</td></tr>
+<tr><td>DSW2 extended ping to PC-A with source 192.168.40.1</td><td class="r-ok">✔ works</td><td>192.168.40.0/24 is permitted.</td></tr>
+<tr><td>PC-A pings R1 Lo0</td><td class="r-ko">✘ fails</td><td>The request leaves fine, but the <b>reply</b> (source 209.165.200.225) is denied as it goes out VLAN 1.</td></tr>
+<tr><td>DSW1 itself pings PC-A</td><td class="r-ok">✔ works</td><td>A device’s own packets skip its own <b>outbound</b> ACL.</td></tr>
+<tr><td>Add <code>30 permit 209.165.200.224 0.0.0.31</code> and <code>40 deny any</code></td><td class="r-ok">✔ live at once</td><td>No need to re-apply. Line 40 now counts the denied packets.</td></tr>
+<tr class="hd"><td colspan="3">Lab 2.1b: ACL 100 <b>in</b> on DSW1 VLAN 1 (SSH to 10.2.2.1 from PC-A, and HTTPS from its LAN to any)</td></tr>
+<tr><td>PC-A: SSH 10.2.2.1 / HTTPS to R1</td><td class="r-ok">✔ works</td><td>Line 10 and line 20 match.</td></tr>
+<tr><td>PC-A: SSH to 192.168.20.1 (also DSW2!)</td><td class="r-ko">✘ fails</td><td>Line 10 only allows destination <b>10.2.2.1</b>. Extended ACLs match the destination IP, not “the device”.</td></tr>
+<tr><td>PC-A pings 10.2.2.1</td><td class="r-ko">✘ fails</td><td>ICMP isn’t permitted, so the implicit deny drops it.</td></tr>
+<tr class="hd"><td colspan="3">Other classic tricks</td></tr>
+<tr><td><code>deny ip any any</code> <b>out</b> on R1 G0/0/1. R1 itself pings 8.8.8.8</td><td class="r-ok">✔ works</td><td>Router-created packets aren’t checked by its outbound ACL. A PC behind R1 fails.</td></tr>
+<tr><td>Standard ACL (permits only a LAN) <b>in</b> on a link running OSPF</td><td class="r-ko">✘ routing breaks</td><td>The OSPF hellos come from the neighbour’s link IP and are denied, so the adjacency drops after 40 s and the routes disappear.</td></tr>
+<tr><td><code>permit tcp 10.1.1.0 0.0.0.255 eq www any</code> to allow browsing</td><td class="r-ko">✘ fails</td><td><code>eq www</code> after the <b>source</b> means source port 80. Write <code>… any eq www</code>.</td></tr>
+<tr><td>Allow only replies to inside pings, inbound from the Internet</td><td class="r-ok">use echo-reply</td><td><code>permit icmp any 192.168.1.0 0.0.0.255 echo-reply</code>. There is no <code>eq</code> for ICMP.</td></tr>
+<tr><td>Add a line to a named ACL without a number</td><td class="r-mid">goes last</td><td>Appended as last + 10. Use <code>15 …</code> to insert in the middle.</td></tr>
+<tr><td><code>no access-list 101 deny tcp …</code> (global mode)</td><td class="r-ko">whole ACL gone</td><td>The classic syntax deletes ALL of ACL 101. Use <code>ip access-list extended 101</code> → <code>no 20</code>.</td></tr>
+<tr><td><code>ip access-group 20 in</code> on an interface that already has ACL 10 in</td><td class="r-mid">ACL 10 replaced</td><td>One ACL per interface per direction.</td></tr>
+<tr><td>Time-range ACL, but <code>show clock</code> shows <code>*</code> or the wrong time</td><td class="r-ko">wrong times</td><td>Time-ranges use the <b>router’s</b> clock, so you need NTP + <code>clock timezone SGT 8</code>.</td></tr>
+</table>
+
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>The invisible <code>deny any</code> exists and is <b>never counted</b>.</li>
+<li><b>Standard near the destination, extended near the source.</b></li>
+<li>A router or switch pinging with no source uses its <b>exit interface IP</b>, not its loopback or VLAN IP.</li>
+<li>An <b>inbound</b> ACL also blocks traffic <b>to</b> the router (ping, OSPF, SSH). An <b>outbound</b> ACL never blocks the router’s <b>own</b> traffic.</li>
+<li>A ping fails if the <b>reply</b> is blocked. Always trace both directions.</li>
+<li>The port operator belongs to the address <b>right before it</b> (source or destination).</li>
+<li>ICMP types use keywords with <b>no <code>eq</code></b>: <code>echo</code>, <code>echo-reply</code>, <code>unreachable</code>.</li>
+<li>A wildcard is not a subnet mask. <b>Router ACL = wildcard; Firepower/ASA ACL = subnet mask.</b></li>
+<li>Edits to an applied ACL work <b>immediately</b>, with no need to re-apply.</li>
+<li>A router’s ACL deny sends an ICMP unreachable back (you see <b>U</b>), which can leak information to a scanner. Firepower/ASA drops <b>silently</b>.</li>
+</ul></div>
+
+<div class="tool" id="tool-wc"><h4>Try it: does this ACE match the packet?</h4>
+<p class="sub">Type an ACE’s address and wildcard, then a packet’s source IP. You’ll see the bit-by-bit check.</p>
+<div class="row"><label>ACE address <input type="text" id="wc-addr" value="192.168.10.0"></label><label>Wildcard <input type="text" id="wc-wild" value="0.0.0.255"></label><label>Packet IP <input type="text" id="wc-test" value="192.168.10.37"></label></div>
+<div id="wc-out"></div></div>
+<div class="tool" id="tool-pf"><h4>Try it: prefix → wildcard → ACE</h4>
+<p class="sub">Type <code>/27</code>, <code>209.165.200.224/27</code> or a mask like <code>255.255.255.224</code>.</p>
+<div class="row"><label>Prefix or mask <input type="text" id="pf-in" value="209.165.200.224/27"></label></div>
+<div id="pf-out"></div></div>
+
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>ACL 1 (only permits 192.168.10.0/24) is <i>in</i> on DSW2 G1/0/24. DSW1 types <code>ping 192.168.20.3</code>. Does it work?</summary><div class="a">No. The ping’s source is DSW1’s exit interface 10.1.1.1, which isn’t permitted, so the implicit deny drops it. An extended ping with source 192.168.10.1 would work.</div></details>
+<details class="qc"><summary>What wildcard matches 172.16.4.0/22?</summary><div class="a">255.255.255.255 − 255.255.252.0 = <b>0.0.3.255</b> (covers 172.16.4.0–172.16.7.255).</div></details>
+<details class="qc"><summary><code>access-list 101 permit tcp any eq 80 host 10.1.1.5</code>: which traffic does it permit?</summary><div class="a">TCP coming <b>from source port 80</b> (web-server replies) to 10.1.1.5, not requests <i>to</i> a web server.</div></details>
+<details class="qc"><summary>Why might a standard ACL applied inbound on R1’s link to DSW1 break everything?</summary><div class="a">It also filters OSPF hellos (to R1 itself) coming from DSW1’s link IP. The neighbour goes down after the dead timer and the routes are lost.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     2. Firepower / ASA
+     ===================================================================== -->
+<section class="topic" id="t-asa" data-topic="asa">
+<div class="t-head"><span class="num">2</span><h2>Firepower / ASA firewall</h2><span class="lab">Lab 2.2 (+ MPF in 2.5 / 2.6)</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>A <b>stateful</b> firewall. Each interface gets a name and a <b>security level</b> from 0 to 100. Traffic may go from a <b>higher</b> level to a <b>lower</b> level by itself, and the replies come back automatically because the firewall <b>remembers the conversation</b>. Going from lower to higher is blocked unless an <b>ACL</b> allows it.</div>
+<div class="analogy"><b class="k">Think of it like</b>A building. <b>Inside = 100</b> is the staff floor, <b>DMZ = 50</b> is the lobby, and <b>outside = 0</b> is the street. Staff can walk down to the lobby or the street and come back, because the guard remembers them. Strangers from the street can’t come up unless their name is on the guard’s list (ACL). <b>Pings are special:</b> by default the guard doesn’t remember ping-ers, so the reply coming back up is treated as a stranger and blocked.</div>
+
+<div class="grid2">
+<div>
+<h3>The rules</h3>
+<ol class="rules">
+<li><code>nameif inside</code> → level <b>100</b> automatically. <b>Any other name → 0</b> unless you type <code>security-level</code>.</li>
+<li><b>Higher → lower: allowed. Lower → higher: blocked</b> (unless ACL). <b>Same level: blocked.</b></li>
+<li><b>Stateful:</b> replies to allowed connections come back automatically. ACLs only check <b>new</b> connections.</li>
+<li><b>ICMP is not inspected by default</b>, so ping replies are treated as new packets and usually dropped. Fix: <code>inspect icmp</code>, or an ACL permitting echo-reply.</li>
+<li>Apply the ACL <b>inbound on the interface where the traffic enters</b>: <code>access-group NAME in interface outside</code>. ASA ACLs use <b>subnet masks</b>.</li>
+<li>Putting an ACL on an interface <b>replaces</b> “higher → lower is free” for traffic entering that interface.</li>
+<li>MPF: <b>class-map</b> = which traffic, <b>policy-map</b> = what to do, <b>service-policy</b> = where (an interface or global).</li>
+</ol>
+</div>
+<figure class="dg" data-dg="asaLab"><figcaption>Lab 2.2: inside E1/5 (100), dmz E1/3 (50), outside E1/1 (0)</figcaption></figure>
+</div>
+
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>ciscoasa(config)# interface ethernet1/3
+ciscoasa(config-if)# nameif dmz
+ciscoasa(config-if)# security-level 50                               ! forget this → level 0!
+ciscoasa(config-if)# ip address 192.168.2.254 255.255.255.0
+ciscoasa(config)# access-list OUTSIDE_DMZ extended permit tcp any host 192.168.2.100 eq www
+ciscoasa(config)# access-group OUTSIDE_DMZ in interface outside
+ciscoasa(config)# policy-map global_policy
+ciscoasa(config-pmap)# class inspection_default
+ciscoasa(config-pmap-c)# inspect icmp                                ! make ping stateful
+ciscoasa(config)# object network obj_any
+ciscoasa(config-network-object)# no nat (any,outside) dynamic interface   ! remove default PAT
+ciscoasa(config)# interface vlan 1
+ciscoasa(config-if)# no nameif inside                                ! free the name "inside"</pre>
+
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">show nameif: spot a forgotten security level</div>
+<div class="row hl"><code>ciscoasa# show nameif</code><span></span></div>
+<div class="row"><code>Interface                Name                     Security</code><span></span></div>
+<div class="row"><code>Ethernet1/1              outside                    0</code><span>Street level.</span></div>
+<div class="row"><code>Ethernet1/3              dmz                       50</code><span>If this shows <b>0</b>, someone forgot <code>security-level 50</code>, and outside ↔ dmz is now blocked (same level).</span></div>
+<div class="row"><code>Ethernet1/5              inside                   100</code><span>Automatic for the name “inside”.</span></div>
+</div>
+<div class="ann"><div class="cap">show conn: the state table (only PERMITTED traffic appears)</div>
+<div class="row hl"><code>ciscoasa# show conn</code><span></span></div>
+<div class="row"><code>2 in use, 4 most used</code><span>2 connections right now.</span></div>
+<div class="row"><code>TCP outside  23.1.2.10:51544 dmz  192.168.2.100:80, idle 0:00:02, bytes 3150, flags UIO</code><span>Internet user → DMZ web server. This exists only because the outside ACL permits it.</span></div>
+<div class="row"><code>TCP dmz  192.168.2.100:80 inside  10.0.0.25:50112, idle 0:00:05, bytes 1830, flags UIO</code><span>The lower-security side is listed first. The <b>client</b> is the one with the random high port (50112); the server has the well-known port (80).</span></div>
+<div class="row"><code>flags UIO</code><span><b>U</b> = up, <b>I</b> = initiator data, <b>O</b> = responder data (older ASA wording: inbound/outbound). Data flowed both ways.</span></div>
+<div class="row"><code>(no ICMP entries)</code><span>Pings only appear here after <code>inspect icmp</code>. A blocked attempt never appears.</span></div>
+</div>
+<div class="ann"><div class="cap">show access-list: did the ACL actually match?</div>
+<div class="row hl"><code>ciscoasa# show access-list OUTSIDE_DMZ</code><span></span></div>
+<div class="row"><code>access-list OUTSIDE_DMZ line 1 extended permit tcp any host 192.168.2.100 eq www (hitcnt=12)</code><span><b>hitcnt</b> = how many times the line matched (like “matches” on a router).</span></div>
+</div>
+<div class="ann"><div class="cap">Resetting the firewall</div>
+<div class="row"><code>ciscoasa# write erase
+Erase configuration in flash memory? [confirm]
+ciscoasa# reload
+System config has been modified. Save? [Y]es / [N]o: N</code><span>Answer <b>N</b>! Answering <b>Y</b> saves the running config back to flash, so nothing is erased. The alternative is <code>configure factory-default</code>.</span></div>
+</div>
+
+<h3><span class="ico">🧪</span> Scenarios: the traffic table (memorise this)</h3>
+<table class="t scen"><tr><th>Traffic</th><th>No ACL (default)</th><th>+ <code>inspect icmp</code></th><th>Outside ACL <code>permit icmp any any</code>, no inspect</th></tr>
+<tr><td>Inside → DMZ / Internet <b>web</b></td><td class="r-ok">✔</td><td class="r-ok">✔</td><td class="r-ok">✔</td></tr>
+<tr><td>Internet → DMZ <b>web</b></td><td class="r-ko">✘ needs ACL</td><td class="r-ko">✘</td><td class="r-ko">✘ (ACL only permits ICMP)</td></tr>
+<tr><td>Inside <b>ping</b> Internet</td><td class="r-ko">✘ reply dropped</td><td class="r-ok">✔</td><td class="r-ok">✔ reply allowed by the ACL</td></tr>
+<tr><td>Inside <b>ping</b> DMZ</td><td class="r-ko">✘ reply dropped</td><td class="r-ok">✔</td><td class="r-ko">✘ reply enters dmz (50 → 100)</td></tr>
+<tr><td>DMZ <b>ping</b> Internet</td><td class="r-ko">✘</td><td class="r-ok">✔</td><td class="r-ok">✔</td></tr>
+<tr><td>Internet <b>ping</b> DMZ</td><td class="r-ko">✘</td><td class="r-ko">✘</td><td class="r-ok">✔</td></tr>
+<tr><td>Internet <b>ping</b> Inside</td><td class="r-ko">✘</td><td class="r-ko">✘</td><td class="r-ok">✔ security hole!</td></tr>
+<tr><td>DMZ → Inside (anything)</td><td class="r-ko">✘</td><td class="r-ko">✘</td><td class="r-ko">✘</td></tr></table>
+<table class="t scen"><tr><th>Mistake</th><th>Result</th><th>Why</th></tr>
+<tr><td>Web ACL applied <code>in interface dmz</code> instead of outside</td><td class="r-ko">Internet still blocked</td><td>Internet traffic enters on <b>outside</b>. Worse, the DMZ server can no longer start connections out (the implicit deny on dmz).</td></tr>
+<tr><td>ACL inbound on <b>inside</b> permitting only www</td><td class="r-ko">inside loses HTTPS, SSH, DNS, ping</td><td>The ACL replaced the “higher → lower is free” rule on inside.</td></tr>
+<tr><td><code>nameif dmz</code> with no <code>security-level</code></td><td class="r-mid">dmz = 0</td><td>Inside → DMZ still works (100 → 0). Outside ↔ DMZ is blocked (same level 0).</td></tr>
+<tr><td>Default NAT not removed</td><td class="r-mid">source = 23.1.2.3</td><td><code>nat (any,outside) dynamic interface</code> hides inside IPs behind the outside IP.</td></tr>
+<tr><td>Wildcard in an ASA ACL (<code>192.168.2.0 0.0.0.255</code>)</td><td class="r-ko">wrong</td><td>The ASA wants a subnet mask: <code>192.168.2.0 255.255.255.0</code>.</td></tr>
+<tr><td><code>ip access-group OUT in</code> under the interface</td><td class="r-ko">wrong syntax</td><td>That is router (IOS) syntax. ASA: <code>access-group OUT in interface outside</code>.</td></tr>
+<tr><td><code>icmp permit any outside</code> to fix pings through the firewall</td><td class="r-ko">no effect</td><td>It only controls pings <b>to the firewall’s own interface</b>.</td></tr>
+<tr><td>Inside browses an Internet site; the outside ACL only permits www to the DMZ</td><td class="r-ok">✔ works</td><td>The reply belongs to an existing connection, so the ACL isn’t checked.</td></tr></table>
+
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>“Why can’t inside users ping out?” is <b>always</b> about the <b>reply</b> (ICMP not inspected).</li>
+<li><code>inspect icmp</code> does <b>not</b> let outside users ping in; new traffic still follows the security levels and ACLs.</li>
+<li>The ACL goes <b>where the traffic enters</b>, <b>inbound</b>. On the ASA it uses <b>subnet masks</b>.</li>
+<li><b>Any</b> interface ACL turns that interface into “only what the ACL permits”.</li>
+<li>A name other than “inside” defaults to level <b>0</b>. Same level = blocked.</li>
+<li><code>global_policy</code> is already applied globally. You only add <code>inspect icmp</code> under <code>class inspection_default</code>.</li>
+<li>A class-map’s <code>match access-list</code> only <b>selects</b> traffic. It doesn’t permit anything.</li>
+<li><code>write erase</code> + <code>reload</code> → answer <b>N</b> to “Save?”.</li>
+</ul></div>
+
+<div class="tool" id="tool-asa"><h4>Try it: will it pass the firewall?</h4>
+<p class="sub">Lab 2.2 setup with NAT removed. Assume every host answers pings and runs a web server. Pick a preset or change the boxes.</p>
+<div class="presets">
+<button data-asapreset='{}'>Lab Part 2: default</button>
+<button data-asapreset='{"outweb":1}'>Part 3: ACL www → DMZ</button>
+<button data-asapreset='{"outweb":1,"inspect":1}'>Part 4: + inspect icmp</button>
+<button data-asapreset='{"outicmp":1}'>Past-quiz trap: permit icmp any any</button>
+<button data-asapreset='{"dmz0":1,"outweb":1}'>Forgot DMZ security-level</button>
+<button data-asapreset='{"dmzacl":1}'>ACL on the wrong interface</button>
+<button data-asapreset='{"inweb":1}'>Inside ACL: www only</button>
+</div>
+<div class="row">
+<label>From <select id="asa-src"><option value="inside">inside (Inside PC)</option><option value="dmz">dmz (DMZ server)</option><option value="outside">outside (Internet)</option></select></label>
+<label>To <select id="asa-dst"><option value="inside">inside (Inside PC)</option><option value="dmz">dmz (DMZ server)</option><option value="outside" selected>outside (Internet)</option></select></label>
+<label>Traffic <select id="asa-proto"><option value="tcp">Web (TCP 80)</option><option value="icmp" selected>Ping (ICMP)</option></select></label>
+</div>
+<div class="checks">
+<label><input type="checkbox" id="asa-dmz0"> Forgot <code>security-level 50</code> on dmz (it becomes 0)</label>
+<label><input type="checkbox" id="asa-inspect"> <code>inspect icmp</code> added to global_policy</label>
+<label><input type="checkbox" id="asa-outweb"> Outside ACL: <code>permit tcp any host 192.168.2.100 eq www</code></label>
+<label><input type="checkbox" id="asa-outicmp"> Outside ACL: <code>permit icmp any any</code></label>
+<label><input type="checkbox" id="asa-inweb"> Inside ACL: <code>permit tcp 10.0.0.0 255.255.255.0 any eq www</code> only</label>
+<label><input type="checkbox" id="asa-dmzacl"> Mistake: the www ACL applied <code>in interface dmz</code></label>
+</div>
+<div id="asa-out"></div>
+<div id="asa-matrix"></div>
+<details><summary>Show the matching firewall configuration</summary><pre class="cfg" id="asa-cfg"></pre></details>
+</div>
+
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>No ACLs, default policy. Inside PC can browse the Internet but can’t ping it. Why?</summary><div class="a">The echo request goes out (100 → 0), but ICMP isn’t inspected, so no state is kept. The echo-reply coming in on outside is treated as new lower → higher traffic and dropped.</div></details>
+<details class="qc"><summary>Outside ACL <code>permit icmp any any</code>, no inspect icmp. Can the Internet ping the inside PC?</summary><div class="a">Yes, which is a hole. The ACL lets the echo request in, and the reply goes 100 → 0, which is allowed. Inside → DMZ pings still fail, because the reply enters on dmz (50 → 100) with no state.</div></details>
+<details class="qc"><summary>Where must the ACL go so Internet users can browse the DMZ server?</summary><div class="a"><code>access-group NAME in interface outside</code>: inbound where the traffic enters.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     3. TCP SYN flood
+     ===================================================================== -->
+<section class="topic" id="t-syn" data-topic="syn">
+<div class="t-head"><span class="num">3</span><h2>TCP SYN flooding: attack &amp; defence</h2><span class="lab">Lab 2.5</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>A TCP connection starts with a 3-step handshake: <b>SYN → SYN-ACK → ACK</b>. The attacker sends thousands of SYNs from <b>fake (spoofed) source IPs</b>. The server answers each one and <b>waits</b> for the final ACK, which never comes. Each waiting slot is a <b>half-open (“embryonic”) connection</b>, shown as <b>SYN-RECV</b>. When all slots are full (<b>512</b> in the lab), real users can’t connect.</div>
+<div class="analogy"><b class="k">Think of it like</b>Prank phone bookings at a restaurant. Someone calls 512 times with fake names, and the restaurant holds a table for each one while waiting for confirmation. Real customers are turned away. The firewall fix (<b>TCP Intercept</b>) is a receptionist who answers the phone first and only passes on callers who actually reply.</div>
+<div class="grid2">
+<figure class="dg" data-dg="synSeq"><figcaption>The SYN-ACK goes to a fake address, so the ACK never comes back</figcaption></figure>
+<figure class="dg" data-dg="interceptSeq"><figcaption>TCP Intercept after <code>embryonic-conn-max</code> is exceeded</figcaption></figure>
+</div>
+
+<h3>Words you must know</h3>
+<table class="t"><tr><th>Word</th><th>Meaning</th></tr>
+<tr><td>Half-open / embryonic / SYN-RECV</td><td>The server got the SYN and sent a SYN-ACK, and is still waiting for the ACK.</td></tr>
+<tr><td>Backlog</td><td>The queue of half-open connections (512 in the lab). When it is full, new users are refused.</td></tr>
+<tr><td>SYN cookies (on the server)</td><td>The server stores nothing until a valid ACK arrives. The lab <b>turns them off</b> so the attack works.</td></tr>
+<tr><td><code>embryonic-conn-max N</code> (on the firewall)</td><td>Once N half-open connections exist, the firewall does <b>TCP Intercept</b>: it answers SYNs itself and only connects real clients to the server.</td></tr>
+<tr><td>Volumetric attack</td><td>An attack that floods with a huge amount of traffic. The notes call Smurf and SYN flood volumetric.</td></tr></table>
+
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>kali@kali:~$ sudo systemctl start apache2                     ! web server on PC-B
+kali@kali:~$ sudo sysctl -w net.ipv4.tcp_syncookies=0          ! make the server vulnerable
+kali@kali:~$ sudo python tcpsynflood 192.168.2.100 80          ! attacker: scapy SYN flood
+kali@kali:~$ ss -t -r state syn-recv | wc -l                   ! count half-open connections
+ciscoasa(config)# access-list WEB extended permit tcp any host 192.168.2.100 eq www
+ciscoasa(config)# class-map WEB-CLASS
+ciscoasa(config-cmap)# match access-list WEB
+ciscoasa(config)# policy-map WEB-POLICY
+ciscoasa(config-pmap)# class WEB-CLASS
+ciscoasa(config-pmap-c)# set connection embryonic-conn-max 50 per-client-embryonic-max 5
+ciscoasa(config-pmap-c)# set connection timeout embryonic 0:00:10       ! optional: free slots faster
+ciscoasa(config)# service-policy WEB-POLICY interface outside</pre>
+
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">On the web server (Kali)</div>
+<div class="row"><code>$ sudo sysctl -w net.ipv4.tcp_syncookies=0
+net.ipv4.tcp_syncookies = 0</code><span>SYN cookies are now OFF, so the server is vulnerable (this is the lab set-up).</span></div>
+<div class="row"><code>$ ss -t -r state syn-recv | wc -l
+512</code><span>Undefended attack: the backlog is <b>full</b> and PC-A gets “Unable to connect”.</span></div>
+<div class="row"><code>Recv-Q Send-Q  Local Address:Port   Peer Address:Port
+0      0       192.168.2.100:http   45.1.1.7:4521
+0      0       192.168.2.100:http   101.77.3.9:38810</code><span>Each line is one half-open connection. Many different peer IPs = <b>spoofed</b> sources.</span></div>
+</div>
+<div class="ann"><div class="cap">On the firewall (format may differ slightly by version)</div>
+<div class="row hl"><code>ciscoasa# show service-policy interface outside</code><span></span></div>
+<div class="row"><code>  Service-policy: WEB-POLICY
+    Class-map: WEB-CLASS
+      Set connection policy: embryonic-conn-max 50 per-client-embryonic-max 5
+        current embryonic conns 50, drop 0</code><span>The limit is active. The half-open count stays at or below 50; beyond that the firewall intercepts. The server’s SYN-RECV count stays low and PC-A can browse.</span></div>
+</div>
+
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td>No defence, server SYN cookies off</td><td class="r-ko">server DoS’d</td><td>SYN-RECV reaches 512; PC-A can’t browse.</td></tr>
+<tr><td>Server SYN cookies <b>on</b> (<code>tcp_syncookies=1</code>)</td><td class="r-ok">server survives</td><td>No state is kept until a valid ACK arrives.</td></tr>
+<tr><td><code>embryonic-conn-max 50</code>, policy on <b>outside</b></td><td class="r-ok">✔ PC-A browses</td><td>TCP Intercept: spoofed SYNs never reach the server.</td></tr>
+<tr><td>The same policy applied on <b>inside</b></td><td class="r-ko">no effect</td><td>The attack goes outside → dmz and never crosses the inside interface.</td></tr>
+<tr><td>Only <code>per-client-embryonic-max 5</code>, with random spoofed IPs</td><td class="r-ko">no effect</td><td>Every packet is a “new client”, so the per-client limit is never reached.</td></tr>
+<tr><td>Outside ACL <code>permit tcp any host 192.168.2.100 eq www</code></td><td class="r-ko">doesn’t stop it</td><td>The ACL must let port 80 in for real users, and the attack is port-80 SYNs.</td></tr>
+<tr><td>A spoofed IP belongs to a real, live host</td><td class="r-mid">slot freed early</td><td>That host gets an unexpected SYN-ACK and replies RST, which is why attackers spoof unused IPs.</td></tr>
+<tr><td><code>set connection timeout embryonic 0:00:05</code></td><td class="r-mid">helps</td><td>Half-open slots are freed faster (default 30 s).</td></tr></table>
+
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>SYN flood = <b>embryonic</b> (half-open) connections, so the defence is <code>embryonic-conn-max</code>.</li>
+<li>The lab <b>disables</b> SYN cookies on purpose; with them the server would survive.</li>
+<li><code>per-client-…</code> limits are useless against random spoofed sources.</li>
+<li>The service-policy must be on an interface the attack actually crosses (outside or dmz), or global.</li>
+<li>An ACL can’t stop it, because it must permit port 80 from <i>any</i>.</li>
+<li>The ACL inside a class-map only <b>selects</b> traffic for MPF. Access still needs <code>access-group</code>.</li>
+</ul></div>
+
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>What does <code>ss -t -r state syn-recv | wc -l</code> count?</summary><div class="a">TCP connections in SYN-RECV, i.e. half-open (embryonic) connections waiting for the final ACK.</div></details>
+<details class="qc"><summary>After <code>embryonic-conn-max</code> is reached, does the firewall drop new SYNs?</summary><div class="a">No. It intercepts them: it answers SYN-ACK itself and connects the client to the server only after the client completes the handshake. Real users still get in.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     4. Slowloris
+     ===================================================================== -->
+<section class="topic" id="t-slow" data-topic="slow">
+<div class="t-head"><span class="num">4</span><h2>Slowloris: attack &amp; defence</h2><span class="lab">Lab 2.6</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>The attacker opens hundreds of <b>normal, fully connected</b> TCP sessions to the web server and sends each HTTP request header <b>extremely slowly</b>, one line every ~10 s, <b>never finishing it</b>. The server keeps every connection reserved while it waits for the end of the header. When all slots are used, real users are refused. <b>One laptop is enough</b>: it is a <b>low-rate</b> attack.</div>
+<div class="analogy"><b class="k">Think of it like</b>Customers who take every table in a restaurant and order one word every 10 seconds, never finishing their order. The fix is <b>“max 20 tables per customer”</b> (<code>per-client-max</code>).</div>
+<figure class="dg" data-dg="slowSeq"><figcaption>The final blank line (\r\n\r\n) never arrives, so each connection stays reserved</figcaption></figure>
+
+<h3>Compare the three DoS attacks</h3>
+<table class="t"><tr><th></th><th>Smurf</th><th>TCP SYN flood</th><th>Slowloris</th></tr>
+<tr><td>Type</td><td>volumetric</td><td>volumetric</td><td><b>low-rate</b> (one PC)</td></tr>
+<tr><td>Abuses</td><td>ICMP to directed broadcast (amplified)</td><td>the TCP handshake (half-open)</td><td>HTTP: a full request header is needed before replying</td></tr>
+<tr><td>Connections are…</td><td>none (ICMP)</td><td><b>embryonic</b></td><td><b>established</b> (and never idle)</td></tr>
+<tr><td>Firewall fix</td><td>(Quiz 1 topic)</td><td><code>embryonic-conn-max</code></td><td><code>per-client-max</code></td></tr>
+<tr><td>ACL helps?</td><td colspan="3">No for SYN flood and Slowloris: the web server must stay open to the Internet.</td></tr></table>
+
+<h3>Which <code>set connection</code> option works against Slowloris?</h3>
+<table class="t scen"><tr><th>Option</th><th>Result</th><th>Why</th></tr>
+<tr><td><code>per-client-max 20</code></td><td class="r-ok">✔ best</td><td>The attacker’s IP is capped at 20, and everyone else gets their own 20.</td></tr>
+<tr><td><code>conn-max 50</code></td><td class="r-mid">server safe, users still blocked</td><td>A single total for the class: the attacker takes all 50 slots.</td></tr>
+<tr><td><code>embryonic-conn-max 50</code></td><td class="r-ko">✘ useless</td><td>Slowloris connections are established, not half-open.</td></tr>
+<tr><td><code>per-client-embryonic-max</code></td><td class="r-ko">✘ useless</td><td>Same reason.</td></tr>
+<tr><td><code>timeout idle 0:01:00</code></td><td class="r-ko">✘ useless</td><td>It sends a header line every ~10 s, so it is never idle.</td></tr>
+<tr><td><code>random-sequence-number</code></td><td class="r-ko">✘ unrelated</td><td>It randomises TCP sequence numbers.</td></tr></table>
+
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>kali@kali:~$ slowhttptest -c 1000 -u http://192.168.2.100           ! -c = number of connections
+ciscoasa(config)# policy-map SLOW-POLICY
+ciscoasa(config-pmap)# class WEB-CLASS                                  ! matches tcp to 192.168.2.100 eq www
+ciscoasa(config-pmap-c)# set connection per-client-max 20
+ciscoasa(config)# service-policy SLOW-POLICY interface outside</pre>
+
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">slowhttptest status screen</div>
+<div class="row"><code>slow HTTP test status on 40th second:</code><span></span></div>
+<div class="row"><code>initializing:        0
+pending:             0</code><span></span></div>
+<div class="row"><code>connected:           1000</code><span>No defence: the attacker holds 1000 open connections. With <code>per-client-max 20</code> only about 20 stay connected and the rest are closed or refused.</span></div>
+<div class="row"><code>error:               0
+closed:              0</code><span></span></div>
+<div class="row hl"><code>service available:   NO</code><span>The tool’s own test request failed. <b>Lab 2.6 step 2.4 trap:</b> after the defence it can <i>still</i> say NO, because the probe comes from the same (limited) attacker IP, while PC-A browses fine.</span></div>
+</div>
+
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td>No defence, 1 attacker, <code>-c 1000</code></td><td class="r-ko">server down</td><td>All connection slots are reserved.</td></tr>
+<tr><td><code>per-client-max 20</code> on outside</td><td class="r-ok">✔ PC-A browses</td><td>The attacker is capped. slowhttptest may still say “NO” (its own IP is limited).</td></tr>
+<tr><td><code>conn-max 50</code> only</td><td class="r-ko">PC-A still blocked</td><td>The attacker fills all 50 allowed connections.</td></tr>
+<tr><td>Re-use the SYN-flood policy (embryonic limits)</td><td class="r-ko">server down</td><td>Slowloris completes the handshake.</td></tr>
+<tr><td>500 bots × 10 connections each, <code>per-client-max 20</code></td><td class="r-ko">not stopped</td><td>Each bot is under the limit, so distributed Slowloris also needs <code>conn-max</code>, timeouts or upstream help.</td></tr>
+<tr><td>Block the attacker with an ACL</td><td class="r-ko">not a real fix</td><td>The web server must stay open to everyone, and attacker IPs aren’t known in advance.</td></tr></table>
+
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>Slowloris = <b>low-rate</b> and <b>established</b> connections. SYN flood = volumetric and <b>embryonic</b>.</li>
+<li><code>per-client-max</code> is the answer for a single attacker; <code>conn-max</code> alone just moves the DoS to the firewall.</li>
+<li>“service available: NO” after the defence does <b>not</b> mean the defence failed.</li>
+<li><code>set connection</code> goes under <b>policy-map → class</b>, never inside the class-map.</li>
+</ul></div>
+
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Which HTTP weakness does Slowloris exploit?</summary><div class="a">The server must receive the <b>complete request header</b> (ending in a blank line) before it can respond, and the connection stays reserved until then.</div></details>
+<details class="qc"><summary>Why does an idle timeout not help?</summary><div class="a">Slowloris sends a little data (one header line) every ~10 s, so the connection is never idle.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     5. OoB & VRF
+     ===================================================================== -->
+<section class="topic" id="t-oob" data-topic="oob">
+<div class="t-head"><span class="num">5</span><h2>Out-of-Band management &amp; VRF</h2><span class="lab">Lab 3.1 notes</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b><b>In-band</b> management = you manage devices over the same network that users use. <b>Out-of-Band (OoB)</b> = a <b>separate, dedicated management network</b> with no user traffic, only for admins. <b>VRF</b> = one router acting like <b>several separate routers</b>: each VRF has <b>its own routing table</b>, and traffic can’t cross between them.</div>
+<div class="analogy"><b class="k">Think of it like</b>OoB is a staff-only corridor next to the public corridor. A VRF is one building split into apartments with <b>no connecting doors</b>; each apartment has its own address book (routing table).</div>
+<div class="grid2">
+<figure class="dg" data-dg="oob"><figcaption>Management network (OoB) vs main production network</figcaption></figure>
+<figure class="dg" data-dg="vrf5"><figcaption>Notes Fig. 6: VRF Red, VRF Green, and the global table</figcaption></figure>
+</div>
+<h3>The rules</h3>
+<ol class="rules">
+<li>Catalyst 9200L/9300L and Firepower 1010 have a <b>management port</b>. The <b>Catalyst 8200L doesn’t</b>, so it uses <b>VRF</b> (a “management VRF”).</li>
+<li>Interfaces not put in a VRF stay in the <b>global</b> routing table.</li>
+<li><code>vrf forwarding</code> <b>erases the interface’s IP address</b>, so configure the IP <b>after</b> it.</li>
+<li>Any command about a VRF needs the word <b>vrf</b>: <code>show ip route vrf OOB</code>, <code>ping vrf OOB …</code>.</li>
+<li>No traffic flows between VRFs, or between a VRF and the global table, unless you deliberately leak routes (not done in the lab).</li>
+</ol>
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>R1(config)# vrf definition OOB
+R1(config-vrf)# address-family ipv4
+R1(config)# interface g0/1/1
+R1(config-if)# vrf forwarding OOB                     ! FIRST (it wipes the IP)
+R1(config-if)# ip address 172.16.99.1 255.255.255.0   ! THEN the IP
+R1# show ip route vrf OOB
+R1# ping vrf OOB 172.16.99.10</pre>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">The message that explains “my VRF interface has no IP”</div>
+<div class="row"><code>R1(config-if)# vrf forwarding OOB
+% Interface GigabitEthernet0/1/1 IPv4 disabled and address(es) removed due to enabling VRF OOB</code><span>The IP you typed earlier is <b>gone</b>. Type <code>ip address …</code> again.</span></div>
+</div>
+<div class="ann"><div class="cap">Two routing tables on one router</div>
+<div class="row hl"><code>R1# show ip route</code><span>The <b>global</b> table: G0/0/0 and G0/0/1 networks only.</span></div>
+<div class="row"><code>C        172.16.10.0/24 is directly connected, GigabitEthernet0/0/1</code><span>No 172.16.99.0/24 here.</span></div>
+<div class="row hl"><code>R1# show ip route vrf OOB</code><span></span></div>
+<div class="row"><code>Routing Table: OOB</code><span>Tells you which VRF you are looking at.</span></div>
+<div class="row"><code>C        172.16.99.0/24 is directly connected, GigabitEthernet0/1/1
+L        172.16.99.1/32 is directly connected, GigabitEthernet0/1/1</code><span><b>C</b> = connected network, <b>L</b> = the interface’s own IP (local /32).</span></div>
+</div>
+<div class="ann"><div class="cap">Ping with and without the VRF keyword</div>
+<div class="row"><code>R1# ping 172.16.99.10
+.....
+Success rate is 0 percent (0/5)</code><span>A plain ping looks in the <b>global</b> table and finds no route.</span></div>
+<div class="row"><code>R1# ping vrf OOB 172.16.99.10
+!!!!!
+Success rate is 100 percent (5/5)</code><span>Uses the OOB table, so it works (lab step 2.4).</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario (notes Fig. 6 router)</th><th>Result</th><th>Why</th></tr>
+<tr><td>Host in 192.168.10.0/24 → host in 192.168.11.0/24</td><td class="r-ok">✔</td><td>Both are in VRF Red, the same table.</td></tr>
+<tr><td>Host in 192.168.10.0/24 (Red) → 192.168.21.0/24 (Green)</td><td class="r-ko">✘</td><td>Different VRFs, and nothing crosses.</td></tr>
+<tr><td>Host in 192.168.20.0/24 (Green) → 10.1.1.0/24 (global)</td><td class="r-ko">✘</td><td>A VRF can’t reach the global table.</td></tr>
+<tr><td><code>show ip route</code></td><td class="r-mid">only 10.1.1.0/24</td><td>The global table only has Gi2/0.</td></tr>
+<tr><td><code>show ip route vrf Green</code></td><td class="r-mid">192.168.20.0 + .21.0</td><td>That VRF’s own table.</td></tr>
+<tr class="hd"><td colspan="3">Lab 3.1 router</td></tr>
+<tr><td>IP configured first, then <code>vrf forwarding</code></td><td class="r-ko">no IP</td><td>The IP was removed, so re-enter it.</td></tr>
+<tr><td>Laptop (production side) pings R1 G0/1/1</td><td class="r-ko">✘ (by design)</td><td>G0/1/1 is not in the global table (lab step 2.2).</td></tr>
+<tr><td><code>ping 172.16.99.10</code> on R1 (no vrf)</td><td class="r-ko">✘</td><td>Wrong table. Use <code>ping vrf OOB</code>.</td></tr></table>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li><code>vrf forwarding</code> wipes the IP. <b>Order: VRF first, IP second.</b></li>
+<li>Plain <code>ping</code> and <code>show ip route</code> only see the <b>global</b> table.</li>
+<li>OoB is <b>more secure</b> because management traffic is <b>isolated</b> from users, not “hidden among them”.</li>
+<li>The 8200L has no management port; the 9200L/9300L/FP1010 do.</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Why can’t the laptop ping R1 G0/1/1 even though R1 is directly connected to it?</summary><div class="a">The laptop’s packet arrives on G0/0/0, which is in the global table. 172.16.99.0/24 exists only in VRF OOB, so the global table has no route to it.</div></details>
+<details class="qc"><summary>Which command shows the routes of VRF OOB?</summary><div class="a"><code>show ip route vrf OOB</code></div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     6. Jump host & SSH
+     ===================================================================== -->
+<section class="topic" id="t-ssh" data-topic="ssh">
+<div class="t-head"><span class="num">6</span><h2>Jump host &amp; SSH</h2><span class="lab">Lab 3.1</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>A <b>jump host</b> (jump server or jump box) is the <b>single guarded entrance</b> from a less-secure zone (the Internet) into the management network. You <b>SSH to the jump host first</b>, then <b>SSH from it</b> to the devices. <b>SSH</b> encrypts the session; <b>Telnet</b> sends everything, including passwords, in clear text.</div>
+<div class="analogy"><b class="k">Think of it like</b>The jump host is the security gate of a factory: one door, a guard, and a logbook. SSH is a sealed envelope; Telnet is a postcard anyone can read.</div>
+<div class="grid2">
+<figure class="dg" data-dg="jumpConcept"><figcaption>Two SSH hops: engineer → jump host → device</figcaption></figure>
+<figure class="dg" data-dg="jumpLab" data-opts='{"vrf":"OOB","n2":"172.16.99.0/24","vm1":"ens18: 172.16.10.10/24","vm2":"ens19: 172.16.99.10/24"}'><figcaption>Lab 3.1: the jump server VM sits between LAN 2 and the OOB network (LAN 3)</figcaption></figure>
+</div>
+<table class="t"><tr><th>Jump host: good</th><th>Jump host: bad</th></tr>
+<tr><td>The attack surface shrinks to <b>one point of entry</b>.<br>It is <b>easy to log, monitor and audit</b>.</td><td>It is an <b>attractive target</b> and a <b>single point of failure</b>, so it <b>must be hardened</b>.<br>Typical: a hardened Linux SSH server in the <b>DMZ</b> that is allowed into the OoB LAN. It must <b>not route</b> between its two interfaces.</td></tr></table>
+<h3>SSH recipe (order matters)</h3>
+<pre class="cli" data-cli>Router(config)# hostname R1                                 ! 1. not the default "Router"
+R1(config)# ip domain-name netsec.lab                       ! 2. needed to name the key
+R1(config)# crypto key generate rsa modulus 2048            ! 3. at least 768 for SSHv2 (2048/4096 recommended)
+R1(config)# ip ssh version 2                                ! 4.
+R1(config)# ip ssh authentication-retries 2                 ! (optional)
+R1(config)# username netadmin secret Adm1n#2217             ! 5. a local user
+R1(config)# ip access-list standard OOB-ONLY
+R1(config-std-nacl)# permit 172.16.99.0 0.0.0.255
+R1(config)# line vty 0 15
+R1(config-line)# login local                                ! 6. use local usernames
+R1(config-line)# transport input ssh                        ! 7. SSH only (Telnet refused)
+R1(config-line)# access-class OOB-ONLY in vrf-also          ! only the OOB subnet; vrf-also for VRF interfaces</pre>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">Key-generation messages</div>
+<div class="row"><code>Router(config)# crypto key generate rsa modulus 2048
+% Please define a hostname other than Router.</code><span>Set <code>hostname</code> first.</span></div>
+<div class="row"><code>R1(config)# crypto key generate rsa modulus 2048
+% Please define a domain-name first.</code><span>Set <code>ip domain-name</code> first.</span></div>
+<div class="row"><code>The name for the keys will be: R1.netsec.lab
+% The key modulus size is 2048 bits
+% Generating 2048 bit RSA keys, keys will be non-exportable...
+[OK]</code><span>Success. The key is named hostname.domain.</span></div>
+</div>
+<div class="ann"><div class="cap">Verify SSH</div>
+<div class="row hl"><code>R1# show ip ssh</code><span>Settings: is SSH on, and which version?</span></div>
+<div class="row"><code>SSH Enabled - version 2.0</code><span>“version 1.99” would mean v1 and v2 are both accepted (no <code>ip ssh version 2</code>).</span></div>
+<div class="row"><code>Authentication timeout: 120 secs; Authentication retries: 3</code><span>The defaults, changed with <code>ip ssh time-out</code> and <code>ip ssh authentication-retries</code>.</span></div>
+<div class="row hl"><code>R1# show ssh</code><span>Who is connected <b>right now</b>.</span></div>
+<div class="row"><code>Connection Version Mode Encryption  Hmac          State           Username
+0          2.0     IN   aes128-ctr  hmac-sha2-256 Session started netadmin</code><span>One active SSH session by netadmin.</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: Lab 3.1 results</h3>
+<table class="t scen"><tr><th>Test</th><th>Result</th><th>Why</th></tr>
+<tr><td>Laptop pings R1 G0/0/0, G0/0/1, and the jump VM’s 1st interface</td><td class="r-ok">✔</td><td>All in the global table, reachable.</td></tr>
+<tr><td>Laptop pings R1 G0/1/1</td><td class="r-ko">✘</td><td>G0/1/1 is in VRF OOB.</td></tr>
+<tr><td>Laptop SSHes straight to R1</td><td class="r-ko">✘ refused</td><td>The access-class only allows the OOB subnet.</td></tr>
+<tr><td>Laptop → SSH to the jump server → ping / SSH to R1 G0/1/1</td><td class="r-ok">✔</td><td>The jump server is on the OOB LAN, and its source IP is permitted.</td></tr>
+<tr><td>From the jump server, SSH to R1’s G0/0/1 address (172.16.10.1)</td><td class="r-ko">✘ refused</td><td>The source would be 172.16.10.10, which isn’t in OOB-ONLY.</td></tr>
+<tr><td><code>access-class OOB-ONLY in</code> <b>without</b> <code>vrf-also</code></td><td class="r-ko">✘ even the jump server is refused</td><td>Without <code>vrf-also</code>, VTY sessions that arrive on VRF interfaces are rejected.</td></tr>
+<tr><td>Telnet to R1 with <code>transport input ssh</code></td><td class="r-ko">✘ refused</td><td>Only SSH is allowed on the VTY lines.</td></tr>
+<tr><td>Jump server with IP forwarding turned on</td><td class="r-ko">bad design</td><td>It becomes a router and the OOB LAN is exposed.</td></tr>
+<tr><td>RSA key of 512 bits + <code>ip ssh version 2</code></td><td class="r-ko">✘ error</td><td>SSHv2 needs at least 768 bits, so regenerate with 2048.</td></tr></table>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>Hostname <b>and</b> domain name are needed before <code>crypto key generate rsa</code>.</li>
+<li><code>login local</code> (usernames) is required for SSH. A shared line password is not enough.</li>
+<li><code>show ip ssh</code> = settings; <code>show ssh</code> = active sessions.</li>
+<li><code>access-class</code> (on VTY lines) filters who can log <b>in to the router</b>. <code>ip access-group</code> filters <b>traffic through an interface</b>.</li>
+<li>VTY 0–15 = 16 lines.</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Name the two pros and two cons of a jump host.</summary><div class="a">Pros: a single point of entry, and easier logging, monitoring and auditing. Cons: an attractive target, and a single point of failure (so it must be hardened).</div></details>
+<details class="qc"><summary>Telnet captured in Wireshark: what can you read?</summary><div class="a">Everything, including the username and password in clear text.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     7. Supermicro & Proxmox
+     ===================================================================== -->
+<section class="topic" id="t-srv" data-topic="srv">
+<div class="t-head"><span class="num">7</span><h2>Supermicro server, IPMI/BMC &amp; Proxmox</h2><span class="lab">Lab 3.1 Appendix A–C</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>The Supermicro box runs <b>Proxmox</b>, a hypervisor that runs <b>virtual machines</b> (VMs). It also has a tiny separate computer, the <b>BMC</b>, reached through the <b>IPMI port</b>. The BMC can power the server on and off and show its screen remotely, <b>even when the server is off</b>. That is out-of-band management for servers.</div>
+<div class="analogy"><b class="k">Think of it like</b>The BMC is a remote control that always works, even with the TV off. Proxmox is a landlord renting out apartments (VMs). A Linux bridge is the patch cable between an apartment and a physical wall socket (port).</div>
+<table class="t"><tr><th>What</th><th>Plug into</th><th>Open</th><th>Login</th></tr>
+<tr><td><b>BMC / IPMI</b>: power on/off, HTML5 remote console</td><td><b>IPMI port</b></td><td><b>http://10.0.0.1</b></td><td>sitstudent / password on the whiteboard</td></tr>
+<tr><td><b>Proxmox</b> web UI</td><td><b>LAN 1</b> (eno1 → vmbr0)</td><td><b>https://10.0.0.10:8006</b></td><td>root / password on the whiteboard</td></tr>
+<tr><td>Your laptop</td><td colspan="3">Any other 10.0.0.x/24, e.g. <b>10.0.0.100</b>. <b>Not</b> .1 (BMC) and <b>not</b> .10 (Proxmox).</td></tr></table>
+<h3>How a VM reaches a cable</h3>
+<div class="chain"><div class="vm">VM <b>ens18</b><small>set in netplan</small></div><span>→</span><div>Linux bridge <b>vmbr1</b><small>Proxmox</small></div><span>→</span><div class="phy"><b>eno2</b><small>= LAN 2</small></div><span>→</span><div>R1 G0/0/1<small>Internet side</small></div></div>
+<div class="chain"><div class="vm">VM <b>ens19</b><small>set in netplan</small></div><span>→</span><div>Linux bridge <b>vmbr2</b><small>Proxmox</small></div><span>→</span><div class="phy"><b>eno5</b><small>= LAN 3</small></div><span>→</span><div>R1 G0/1/1<small>VRF OOB</small></div></div>
+<div class="grid2">
+<table class="t"><tr><th>Port name</th><th>Physical port</th></tr><tr><td>eno1</td><td>LAN 1 (vmbr0 = Proxmox 10.0.0.10)</td></tr><tr><td><b>eno2</b></td><td><b>LAN 2</b></td></tr><tr><td>eno3np0 / eno4np2</td><td>SFP 1 / SFP 2</td></tr><tr><td><b>eno5</b></td><td><b>LAN 3</b></td></tr><tr><td>eno6</td><td>LAN 4</td></tr><tr><td>enx…</td><td>IPMI</td></tr></table>
+<table class="t"><tr><th>Pre-made VM</th><th>Does</th><th>IP</th></tr><tr><td>100 Webserver</td><td>Apache</td><td>10.0.0.11</td></tr><tr><td>101 DNS</td><td>Bind9</td><td>10.0.0.12</td></tr><tr><td><b>102 Tacacs</b></td><td><b>FreeRADIUS + TACACS (AAA)</b></td><td>10.0.0.13</td></tr><tr><td>104 File Server</td><td>FTP + SMB</td><td>10.0.0.14</td></tr><tr><td colspan="3">Gateway 10.0.0.254 · DNS 8.8.8.8 · user <i>ubuntu</i></td></tr></table>
+</div>
+<h3><span class="ico">🖥️</span> Outputs to know (inside the VM)</h3>
+<pre class="cli out">ubuntu@jump:~$ cat /etc/netplan/50-cloud-init.yaml
+network:
+  version: 2
+  ethernets:
+    ens18:                     # → vmbr1 → eno2 (LAN 2), Internet side
+      addresses: [172.16.10.10/24]
+      routes:
+        - to: default
+          via: 172.16.10.1
+    ens19:                     # → vmbr2 → eno5 (LAN 3), OOB side
+      addresses: [172.16.99.10/24]</pre>
+<pre class="cli" data-cli>ubuntu@jump:~$ sudo netplan generate          ! only if the file doesn't exist
+ubuntu@jump:~$ sudo netplan apply             ! nothing changes until you apply
+ubuntu@jump:~$ ip -br a</pre>
+<div class="ann"><div class="cap">ip -br a: did the addresses apply?</div>
+<div class="row"><code>lo       UNKNOWN  127.0.0.1/8</code><span>Loopback.</span></div>
+<div class="row"><code>ens18    UP       172.16.10.10/24</code><span>1st NIC: Internet side.</span></div>
+<div class="row"><code>ens19    UP       172.16.99.10/24</code><span>2nd NIC: OOB side. If an interface shows <b>DOWN</b> or no IP, check the bridge, the cable port, and <code>netplan apply</code>.</span></div>
+</div>
+<table class="t"><tr><th>VM button</th><th>Meaning</th><th>OK?</th></tr>
+<tr><td>Shutdown / Reboot</td><td>graceful</td><td class="r-ok">best practice</td></tr>
+<tr><td>Pause</td><td>freezes the CPU, keeps RAM</td><td></td></tr>
+<tr><td>Hibernate</td><td>saves RAM to disk, then powers off</td><td></td></tr>
+<tr><td>Stop / Reset</td><td>forced power-off / restart</td><td class="r-ko">not recommended</td></tr>
+<tr><td>Snapshots → <b>Original-Image</b> → Rollback</td><td>back to fresh with default credentials</td><td class="r-ok">fixes a broken VM</td></tr></table>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td>Laptop on <b>LAN 1</b>, browse http://10.0.0.1</td><td class="r-ko">✘ timeout</td><td>The BMC is only on the <b>IPMI</b> port. LAN 1 is Proxmox (10.0.0.10:8006).</td></tr>
+<tr><td>Laptop set to 10.0.0.10</td><td class="r-ko">IP conflict</td><td>That is Proxmox’s address.</td></tr>
+<tr><td>Linux bridge created, Apply Configuration not clicked</td><td class="r-ko">pending, not working</td><td>Click <b>Apply Configuration</b> and confirm with Yes.</td></tr>
+<tr><td>VM IP typed into the Create: Linux Bridge dialog</td><td class="r-ko">wrong</td><td>Those IP fields belong to the Proxmox host. VM IPs go in netplan.</td></tr>
+<tr><td>VM NIC still on vmbr0</td><td class="r-ko">VM not on LAN 2</td><td>Hardware → Network Device → Edit → Bridge = vmbr1.</td></tr>
+<tr><td>netplan edited but not applied</td><td class="r-ko">no change</td><td>Run <code>sudo netplan apply</code>.</td></tr>
+<tr><td>Uploading an ISO image</td><td class="r-mid">local (pve)</td><td><b>local</b> = ISO images and backups; <b>local-lvm</b> = VM disks and CT volumes.</td></tr>
+<tr><td>Rack switched off without shutting down</td><td class="r-ko">risk of corruption</td><td>Shut down the VMs → Proxmox (pve → Shutdown) or BMC Graceful Shutdown.</td></tr></table>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li><b>IPMI port → 10.0.0.1 (BMC)</b>; <b>LAN 1 → 10.0.0.10:8006 (Proxmox, https)</b>.</li>
+<li><b>LAN 2 = eno2, LAN 3 = eno5</b> (not eno3; eno3np0 is SFP 1).</li>
+<li>A VM can <b>only</b> reach a physical port through a Linux bridge.</li>
+<li>The BMC works even when the server is <b>off</b>; that is the point of it.</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Which bridge port gives a VM access to the LAN 3 port?</summary><div class="a"><b>eno5</b> (e.g. vmbr2 with bridge port eno5).</div></details>
+<details class="qc"><summary>Which pre-made VM provides TACACS+ and RADIUS?</summary><div class="a">102 (Tacacs), FreeRADIUS + TACACS at 10.0.0.13.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     8. AAA Authentication
+     ===================================================================== -->
+<section class="topic" id="t-authn" data-topic="authn">
+<div class="t-head"><span class="num">8</span><h2>AAA Part 1: Authentication</h2><span class="lab">Lab 3.2</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b><b>AAA</b> = <b>Authentication</b> (who are you?), <b>Authorization</b> (what may you do?) and <b>Accounting</b> (what did you do?). Authentication can use a shared line password (weak), <b>local usernames</b> on each device, or a <b>central AAA server</b> (TACACS+ or RADIUS) that stores everyone’s login once.</div>
+<div class="analogy"><b class="k">Think of it like</b>Authentication = showing your ID at the door. Authorization = which rooms your keycard opens. Accounting = the CCTV and logbook.</div>
+<div class="callout key"><b>ERROR vs FAIL: the rule behind every fallback question</b>
+The device tries the methods <b>in the order listed</b>, e.g. <code>group tacacs+ group radius local</code>.<br>
+• <b>ERROR</b> = the server is <b>dead or unreachable</b> (no answer, timeout, wrong IP, not listening). → <b>Try the next method.</b><br>
+• <b>FAIL</b> = the server <b>answered “NO”</b> (unknown user or wrong password). → <b>Stop. You’re rejected.</b> The next methods are never tried.<br>
+Analogy: if the security desk’s phone line is dead, you call the next desk. If the desk answers “you’re not on our list”, you don’t get to ask another desk.</div>
+<div class="grid2">
+<div>
+<h3>The rules</h3>
+<ol class="rules">
+<li>The <b>default</b> method list applies automatically to the <b>console and VTY</b> lines.</li>
+<li>A <b>named</b> list does nothing until applied: <code>line vty 0 15</code> → <code>login authentication MY-LIST</code>.</li>
+<li>Always end with <b><code>local</code></b>. Without it, if all servers are down, nobody can log in, <b>not even on the console</b>.</li>
+<li>The switch’s <code>key</code> must match the server’s shared secret, and the switch must be a listed client on the server.</li>
+<li>Server-based AAA benefits: <b>scalability/manageability</b> (users configured once) and <b>fault tolerance</b> (several servers).</li>
+</ol>
+</div>
+<figure class="dg" data-dg="aaaLab"><figcaption>Labs 3.2–3.4: the switch is the AAA client</figcaption></figure>
+</div>
+<h3>Passwords: weakest to strongest</h3>
+<table class="t"><tr><th>Config</th><th>Shows in show run as</th><th>Strength</th></tr>
+<tr><td><code>password cisco</code></td><td>type 0 (clear text)</td><td class="r-ko">none</td></tr>
+<tr><td><code>password</code> + <code>service password-encryption</code></td><td><b>type 7</b> (e.g. <code>0822455D0A16</code>)</td><td class="r-ko">weak, reversible: decoded in seconds</td></tr>
+<tr><td><code>secret cisco</code></td><td>type 5 (MD5 hash, <code>$1$…</code>)</td><td class="r-mid">one-way hash</td></tr>
+<tr><td><code>algorithm-type sha256 secret …</code></td><td>type 8 (<code>$8$…</code>)</td><td class="r-ok">recommended</td></tr>
+<tr><td><code>algorithm-type scrypt secret …</code></td><td>type 9 (<code>$9$…</code>)</td><td class="r-ok">recommended</td></tr></table>
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>R1(config)# login block-for 120 attempts 3 within 60    ! 3 fails in 60 s → block ALL remote logins for 120 s
+R1(config)# login quiet-mode access-class PERMIT-ADMIN   ! hosts STILL ALLOWED during the block
+R1(config)# login delay 3                                ! wait between attempts
+R1(config)# login on-failure log                         ! %SEC_LOGIN-4-LOGIN_FAILED
+R1(config)# login on-success log                         ! %SEC_LOGIN-5-LOGIN_SUCCESS
+R1(config)# aaa new-model
+R1(config)# tacacs server TACACSVR
+R1(config-server-tacacs)# address ipv4 192.168.1.11
+R1(config-server-tacacs)# key TACACS-pa55w0rd
+R1(config)# radius server RADIUSVR
+R1(config-radius-server)# address ipv4 192.168.1.12 auth-port 1812 acct-port 1813
+R1(config-radius-server)# key RADIUS-pa55w0rd
+R1(config)# username ADMIN secret Str0ngPa55w0rd
+R1(config)# aaa authentication login default group tacacs+ group radius local</pre>
+<h3>TACACS+ vs RADIUS</h3>
+<table class="t"><tr><th></th><th>TACACS+</th><th>RADIUS</th></tr>
+<tr><td>Port</td><td><b>TCP 49</b></td><td><b>UDP 1812</b> (auth) / <b>1813</b> (accounting)</td></tr>
+<tr><td>Encrypts</td><td><b>whole packet body</b></td><td><b>password only</b> (username visible)</td></tr>
+<tr><td>A-A-A</td><td><b>separate</b> steps</td><td>authN + authZ <b>together</b> (in Access-Accept)</td></tr>
+<tr><td>Per-command authorization and command accounting</td><td>yes</td><td>no</td></tr>
+<tr><td>Standard / main use</td><td>Cisco / <b>device administration</b></td><td>open RFC / <b>network access</b></td></tr>
+<tr><td>Login messages (Wireshark)</td><td><b>6</b>: START, REPLY, CONTINUE, REPLY, CONTINUE, REPLY(PASS)</td><td><b>2</b>: Access-Request, Access-Accept/Reject</td></tr>
+<tr><td>Server files</td><td>TACACS.net: <code>tacplus.xml</code> (listen IP, default 127.0.0.1!), <code>clients.xml</code> (switch IP + secret), <code>authentication.xml</code> (users), <code>authorization.xml</code> (levels/views)</td><td>FreeRADIUS: <code>clients.conf</code> (switch IP + secret), <code>users</code> (users + AV-pairs). Run <code>freeradius -X</code>, test with <code>radtest</code></td></tr></table>
+<div class="grid2"><figure class="dg" data-dg="tacSeq"><figcaption>TACACS+: separate authentication, authorization and accounting</figcaption></figure><figure class="dg" data-dg="radSeq"><figcaption>RADIUS: Access-Accept carries the authorization too</figcaption></figure></div>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">Brute-force protection (typical show login output)</div>
+<div class="row hl"><code>R1# show login</code><span></span></div>
+<div class="row"><code>     A login delay of 3 seconds is applied.
+     Quiet-Mode access list PERMIT-ADMIN is applied.</code><span>From <code>login delay</code> and <code>login quiet-mode access-class</code>.</span></div>
+<div class="row"><code>     If more than 3 login failures occur in 60 seconds or less,
+       logins will be disabled for 120 seconds.</code><span>From <code>login block-for 120 attempts 3 within 60</code>.</span></div>
+<div class="row"><code>     Router presently in Normal-Mode.</code><span>During an attack it says <b>Quiet-Mode</b>: all remote logins are blocked except hosts in PERMIT-ADMIN.</span></div>
+</div>
+<div class="ann"><div class="cap">Log messages and failure list</div>
+<div class="row"><code>%SEC_LOGIN-4-LOGIN_FAILED: Login failed [user: admin] [Source: 203.0.113.5] [localport: 22] [Reason: Login Authentication Failed]</code><span>Severity <b>4</b>. A syslog server set to <code>logging trap 3</code> never sees failed logins!</span></div>
+<div class="row"><code>%SEC_LOGIN-1-QUIET_MODE_ON: Still timeleft for watching failures is 158 secs, [user: admin] [Source: 203.0.113.5] …</code><span>Quiet mode started (severity 1).</span></div>
+<div class="row"><code>R1# show login failures
+Total failed logins: 2
+Username   lPort  Count  TimeStamp                     SourceIPAddr
+wendell    23     2      08:53:54 UTC Thu Nov 1 2018   192.168.1.10</code><span>Who failed, from where, how many times. Port 23 = Telnet, 22 = SSH.</span></div>
+</div>
+<div class="ann"><div class="cap">Server-side checks</div>
+<div class="row"><code>C:\&gt; netstat -an | findstr :49
+  TCP    127.0.0.1:49      0.0.0.0:0      LISTENING</code><span><b>Wrong:</b> TACACS.net only listens on loopback (tacplus.xml not edited), so the switch gets no answer (ERROR).</span></div>
+<div class="row"><code>  TCP    192.168.1.11:49   0.0.0.0:0      LISTENING</code><span><b>Right:</b> listening on the PC’s real IP. Restart with <code>sc stop TACACS.net</code> / <code>sc start TACACS.net</code>.</span></div>
+<div class="row"><code>$ sudo freeradius -X
+…
+Ready to process requests</code><span>FreeRADIUS in debug mode, waiting.</span></div>
+<div class="row"><code>(0) Login OK: [raduser] (from client private-network-1 port 1 cli 192.168.1.3)
+(0) Sent Access-Accept Id 23 from 192.168.1.12:1812 to 192.168.1.2:1645</code><span>The login was accepted.</span></div>
+<div class="row"><code>Ignoring request to auth address * port 1812 bound to server default from unknown client 192.168.10.2 port 51032 proto udp</code><span>The switch IP isn’t in <code>clients.conf</code>, so the request is silently ignored. The switch sees a timeout (ERROR) and falls back to the next method.</span></div>
+<div class="row"><code>$ radtest raduser Rad1us! 127.0.0.1 0 testing123
+Sent Access-Request Id 87 from 0.0.0.0:41237 to 127.0.0.1:1812
+Received Access-Accept Id 87 from 127.0.0.1:1812</code><span>A local self-test on the RADIUS PC (testing123 = the default localhost secret). A wrong password gives <b>Access-Reject</b>.</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: <code>default group tacacs+ group radius local</code></h3>
+<table class="t scen"><tr><th>Situation</th><th>Who can log in</th><th>Why</th></tr>
+<tr><td>Both servers up</td><td class="r-ok">TACACS+ users only</td><td>TACACS+ answers everyone. A RADIUS-only or local-only user gets FAIL, so it stops.</td></tr>
+<tr><td>TACACS+ down, RADIUS up</td><td class="r-ok">RADIUS users only</td><td>TACACS+ ERROR → RADIUS answers (and FAILs the others).</td></tr>
+<tr><td>Both down</td><td class="r-ok">local users</td><td>ERROR, ERROR → local.</td></tr>
+<tr><td>TACACS+ user types the wrong password</td><td class="r-ko">rejected</td><td>FAIL, with no retry on RADIUS or local.</td></tr>
+<tr><td>TACACS.net still on 127.0.0.1</td><td class="r-mid">behaves as “TACACS+ down”</td><td>No connection → ERROR → next method.</td></tr>
+<tr><td>Switch not in FreeRADIUS clients.conf</td><td class="r-mid">behaves as “RADIUS down”</td><td>Ignored → timeout → ERROR → local.</td></tr>
+<tr><td>List <code>group tacacs+</code> only, server down</td><td class="r-ko">nobody, console included</td><td>No fallback method → locked out.</td></tr>
+<tr><td><code>aaa authentication login CON none</code> applied to <code>line con 0</code></td><td class="r-mid">console: no login at all</td><td>The named list overrides the default on that line only.</td></tr>
+<tr><td>Quiet mode active (3 failures in 60 s)</td><td class="r-mid">only PERMIT-ADMIN hosts</td><td>Everyone else is blocked for 120 s.</td></tr></table>
+<div class="tool" id="tool-aaa"><h4>Try it: AAA login simulator (authentication → authorization → accounting)</h4>
+<p class="sub">Users: <b>tacuser</b> exists only on TACACS+, <b>raduser</b> only on RADIUS, <b>ADMIN</b> only in the switch’s local database. Login is via SSH.</p>
+<div class="row">
+<label>Method list <select id="aaa-list"><option value="tr-l" selected>group tacacs+ group radius local</option><option value="t-l">group tacacs+ local</option><option value="t">group tacacs+ (no fallback)</option><option value="l">local</option></select></label>
+<label>TACACS+ server <select id="aaa-tac"><option value="up" selected>up</option><option value="down">down / unreachable</option><option value="loop">still listening on 127.0.0.1</option></select></label>
+<label>RADIUS server <select id="aaa-rad"><option value="up" selected>up</option><option value="down">down / unreachable</option><option value="unknown">switch missing from clients.conf</option></select></label>
+<label>Who logs in <select id="aaa-user"><option value="tac">tacuser (right password)</option><option value="tacbad">tacuser (WRONG password)</option><option value="rad" selected>raduser</option><option value="loc">ADMIN (local)</option></select></label>
+</div>
+<div class="checks"><label><input type="checkbox" id="aaa-authz" checked> <code>aaa authorization exec default …</code> (same list) is configured</label></div>
+<div id="aaa-out"></div>
+<details><summary>Show the switch configuration being simulated</summary><pre class="cfg" id="aaa-cfg"></pre></details>
+</div>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li><b>ERROR → next method. FAIL → stop.</b> A wrong password never “falls through” to local.</li>
+<li>Always end the list with <code>local</code>; otherwise you are locked out when the servers are down.</li>
+<li>The default list covers the console too. Named lists must be applied to a line.</li>
+<li>Quiet mode blocks <b>everyone</b>; the quiet-mode ACL lists who is <b>still allowed</b>.</li>
+<li>Type 7 is reversible. <code>secret</code> is a hash (5 = MD5, 8 = SHA-256, 9 = scrypt).</li>
+<li>RADIUS shows the <b>username in clear text</b>; only the password is hidden. TACACS+ encrypts the whole body.</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Both servers are up. ADMIN (local only) tries to log in with the lab list. Result?</summary><div class="a">Rejected. TACACS+ is reachable and answers FAIL (no such user), so local is never tried.</div></details>
+<details class="qc"><summary>How many TACACS+ messages for one successful login (username and password asked separately)?</summary><div class="a">6: START, REPLY, CONTINUE, REPLY, CONTINUE, REPLY(PASS). RADIUS needs 2.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     9. AAA Authorization
+     ===================================================================== -->
+<section class="topic" id="t-authz" data-topic="authz">
+<div class="t-head"><span class="num">9</span><h2>AAA Part 2: Authorization</h2><span class="lab">Lab 3.3</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>After you log in, <b>what commands may you run?</b> There are two ways: <b>privilege levels</b> (a 0–15 ladder; higher sees everything below it) or <b>CLI views</b> (a custom list of exactly which commands a role gets).</div>
+<div class="analogy"><b class="k">Think of it like</b>Privilege levels are lift keycards: a level-10 card opens floors 0–10. Views are a custom menu: you can order only what is printed on <i>your</i> menu.</div>
+<div class="grid2">
+<div>
+<h3>Privilege levels</h3>
+<table class="t"><tr><th>Level</th><th>Meaning</th></tr>
+<tr><td>0</td><td>only <code>disable</code>, <code>enable</code>, <code>exit</code>, <code>help</code>, <code>logout</code></td></tr>
+<tr><td><b>1</b></td><td>user EXEC (<code>R1&gt;</code>), the default after login</td></tr>
+<tr><td>2–14</td><td>custom: you move commands into them</td></tr>
+<tr><td><b>15</b></td><td>privileged EXEC (<code>R1#</code>, “enable mode”), everything</td></tr></table>
+<p>A user can run commands <b>at their level or lower</b>. Moving a command <b>up</b> takes it away from lower levels.</p>
+</div>
+<div>
+<h3>CLI views (role-based)</h3>
+<ul>
+<li><b>Root view</b> creates the views: <code>enable view</code> + the <b>enable secret</b>. It needs <code>aaa new-model</code>.</li>
+<li><b>CLI view</b> = a set of commands. <b>Superview</b> = a group of views (<b>no commands directly</b>).</li>
+<li>A view can belong to several superviews. Maximum <b>15</b> views.</li>
+<li><b>Always available</b> in any view: <code>enable</code>, <code>exit</code>, <code>show parser</code>.</li>
+<li><code>include</code> = add; <code>include-exclusive</code> = add and <b>forbid it in all other views</b>; <code>exclude</code> = remove; <code>all</code> = every command starting with that word.</li>
+</ul>
+</div>
+</div>
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>R1(config)# privilege exec level 5 ping              ! ping now needs level 5+
+R1(config)# enable secret level 5 cisco5             ! password for "enable 5"
+R1(config)# username SUPPORT privilege 5 secret cisco5
+R1(config)# privilege exec reset ping                ! back to the default level
+R1(config)# aaa authorization exec default group tacacs+ group radius local   ! apply server levels/views
+R1(config)# parser view SHOWVIEW
+R1(config-view)# secret cisco
+R1(config-view)# commands exec include show version
+R1(config)# parser view ADMIN superview
+R1(config-view)# secret cisco2
+R1(config-view)# view SHOWVIEW
+R1(config)# username Wendell view ADMIN secret odom</pre>
+<pre class="cli out">FreeRADIUS "users" file:
+raduser   Cleartext-Password := "Rad1us!"
+          cisco-avpair = "shell:priv-lvl=5"
+wendell   Cleartext-Password := "odom"
+          Service-Type = NAS-Prompt-User,
+          cisco-avpair = "shell:cli-view-name=ADMIN"</pre>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">Privilege levels in action</div>
+<div class="row"><code>R1&gt; show privilege
+Current privilege level is 1</code><span>The <code>&gt;</code> prompt = level 1.</span></div>
+<div class="row"><code>R1&gt; ping 10.1.1.1
+         ^
+% Invalid input detected at '^' marker.</code><span>After <code>privilege exec level 5 ping</code>, level-1 users <b>lose</b> ping.</span></div>
+<div class="row"><code>R1&gt; enable 5
+Password:
+R1# show privilege
+Current privilege level is 5</code><span>Levels 2–15 show the <code>#</code> prompt. Now ping works, but level-15 commands like <code>configure terminal</code> don’t.</span></div>
+</div>
+<div class="ann"><div class="cap">CLI views</div>
+<div class="row"><code>R1&gt; enable view SHOWVIEW
+Password:
+R1# ?
+Exec commands:
+  enable  Turn on privileged commands
+  exit    Exit from the EXEC
+  show    Show running system information</code><span>Only what was included, plus the always-available commands.</span></div>
+<div class="row"><code>R1# show ?
+  parser   Display parser information
+  version  System hardware and software status</code><span><code>show parser</code> is always there; <code>show version</code> was included.</span></div>
+<div class="row"><code>R1# show parser view
+Current view is 'SHOWVIEW'</code><span>Which view am I in? (In root view: “Current view is 'root'”.)</span></div>
+<div class="row"><code>R1# show parser view all
+ SHOWVIEW
+ VERIFYVIEW
+ USER *
+ ADMIN *
+-------(*) represent superview-------</code><span><b>*</b> = superview. The root view itself isn’t listed.</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td><code>privilege exec level 5 ping</code>. USER (level 1) pings</td><td class="r-ko">✘ Invalid input</td><td>Ping now needs ≥ 5.</td></tr>
+<tr><td>JR-ADMIN (level 10): ping (5) and reload (10)</td><td class="r-ok">✔ both</td><td>10 ≥ 5 and 10 ≥ 10.</td></tr>
+<tr><td>JR-ADMIN types <code>configure terminal</code></td><td class="r-ko">✘</td><td>It is still a level-15 command.</td></tr>
+<tr><td>The server sends priv-lvl or a view, but <b>no</b> <code>aaa authorization exec</code></td><td class="r-ko">lands at level 1</td><td>Attributes are only applied when exec authorization is on.</td></tr>
+<tr><td>Lab 3.3: TACACS+ down, raduser logs in (RADIUS priv-lvl=5)</td><td class="r-mid">level 5</td><td>Authorization falls back like authentication.</td></tr>
+<tr><td>Both servers down, ADMIN (<code>privilege 15</code>) logs in</td><td class="r-mid">level 15</td><td>Local authorization.</td></tr>
+<tr><td>In SHOWVIEW, type <code>show running-config</code></td><td class="r-ko">✘</td><td>Not included in the view.</td></tr>
+<tr><td><code>commands exec include ping</code> inside a superview</td><td class="r-ko">✘ not allowed</td><td>Superviews hold views, not commands.</td></tr>
+<tr><td>NETOPS has <code>include-exclusive show ip route</code>; HELPDESK tries <code>include show ip route</code></td><td class="r-ko">✘ rejected</td><td>An exclusive command can live in only one view.</td></tr></table>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>Moving a command to a higher level <b>removes</b> it from the lower levels.</li>
+<li>Level 0 has just 5 commands: disable, enable, exit, help, logout.</li>
+<li>Views need <code>aaa new-model</code>. Root view uses the normal <b>enable secret</b>.</li>
+<li>A superview can’t contain commands, only views.</li>
+<li>TACACS+ authorization is a <b>separate</b> REQUEST/RESPONSE. RADIUS puts it in the <b>Access-Accept</b>.</li>
+</ul></div>
+<p class="note">Try authorization outcomes in the <a href="#tool-aaa">AAA simulator</a> above: toggle “aaa authorization exec” and switch servers on and off.</p>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Why are views better than privilege levels?</summary><div class="a">With privilege levels, every lower-level command is automatically available at higher levels. Views let you choose exactly which commands each role gets.</div></details>
+<details class="qc"><summary>Which commands always exist in any CLI view?</summary><div class="a"><code>enable</code>, <code>exit</code> and <code>show parser</code>.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     10. AAA Accounting
+     ===================================================================== -->
+<section class="topic" id="t-acct" data-topic="acct">
+<div class="t-head"><span class="num">10</span><h2>AAA Part 3: Accounting</h2><span class="lab">Lab 3.4</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>Accounting is the <b>logbook</b>. <b>exec</b> accounting records when a user’s session <b>starts and stops</b> (and how long it lasted). <b>commands</b> accounting records <b>each command</b> typed at a privilege level, and <b>only TACACS+</b> can do that.</div>
+<div class="analogy"><b class="k">Think of it like</b>A building’s sign-in sheet (time in, time out) plus a CCTV record of which rooms you opened (commands).</div>
+<pre class="cli" data-cli>R1(config)# aaa accounting exec default start-stop group tacacs+ group radius   ! Start at login, Stop at logout
+R1(config)# aaa accounting commands 15 default stop-only group tacacs+          ! every level-15 command</pre>
+<h3><span class="ico">🖥️</span> Outputs to know: reading a TACACS.net log</h3>
+<div class="ann"><div class="cap">C:\ProgramData\TACACS.net\Logs\Accounting…</div>
+<div class="row"><code>NAS_IP=192.168.1.200 Port=tty1 rem_addr=192.168.1.3 User=wendell Flags=Start task_id=25 service=shell</code><span><b>Start</b> = wendell logged in. <b>NAS_IP</b> = the <b>device</b>. <b>rem_addr</b> = the <b>user’s PC</b>. tty1 = a VTY (Telnet/SSH) line.</span></div>
+<div class="row"><code>… User=wendell Flags=Stop task_id=25 service=shell priv-lvl=15 cmd=show running-config &lt;cr&gt;</code><span>A <b>command</b> record (from <code>commands 15</code>): one Stop per command typed.</span></div>
+<div class="row"><code>… User=wendell Flags=Stop task_id=25 service=shell disc-cause=1 elapsed_time=22</code><span>Session <b>Stop</b>: logged out after <b>22 s</b>. The same <b>task_id</b> = the same session.</span></div>
+</div>
+<div class="ann"><div class="cap">FreeRADIUS accounting (/var/log/freeradius/radacct/&lt;device-IP&gt;/detail-…)</div>
+<div class="row"><code>	Acct-Status-Type = Start
+	User-Name = "raduser"
+	NAS-IP-Address = 192.168.1.2</code><span>A session-start record, received on <b>UDP 1813</b>.</span></div>
+<div class="row"><code>	Acct-Status-Type = Stop
+	Acct-Session-Time = 95</code><span>Stop record: the session lasted 95 s. There are no command records, because RADIUS can’t do them.</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Recorded</th><th>Why</th></tr>
+<tr><td>Both servers up. User logs in, runs <code>show running-config</code>, exits</td><td class="r-ok">TACACS+: Start, cmd, Stop</td><td>Exec + command accounting on TACACS+.</td></tr>
+<tr><td>TACACS+ down, RADIUS up</td><td class="r-mid">RADIUS: Start + Stop only</td><td>Exec falls back to RADIUS. Commands are lost (TACACS+ only).</td></tr>
+<tr><td>Both servers down</td><td class="r-ko">nothing</td><td>No reachable accounting server.</td></tr>
+<tr><td><code>stop-only</code> instead of <code>start-stop</code> for exec</td><td class="r-mid">only Stop records</td><td>The Stop still has the elapsed time.</td></tr>
+<tr><td><code>commands 15</code>, user runs <code>ping</code> or <code>show version</code></td><td class="r-ko">not recorded</td><td>Those are level-1 commands. You’d need <code>commands 1</code>.</td></tr>
+<tr><td>Need command logs to survive a TACACS+ outage</td><td class="r-mid">add another TACACS+ server</td><td>Adding RADIUS to the list doesn’t help.</td></tr></table>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li><b>Command accounting = TACACS+ only.</b></li>
+<li><code>commands 15</code> logs only commands whose privilege level is 15.</li>
+<li><b>rem_addr</b> = the user’s PC; <b>NAS_IP</b> = the network device.</li>
+<li>Elapsed time = the Stop time minus the Start time (in seconds).</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>Start at 14:02:11, Stop at 14:05:41. What is elapsed_time?</summary><div class="a">3 min 30 s = <b>210</b> seconds.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     11. NTP
+     ===================================================================== -->
+<section class="topic" id="t-ntp" data-topic="ntp">
+<div class="t-head"><span class="num">11</span><h2>NTP: time synchronisation</h2><span class="lab">Lab 3.5</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>NTP makes every device’s clock agree, so <b>log timestamps line up</b> and <b>time-based ACLs</b> fire at the right time. It runs over <b>UDP 123</b>. <b>Stratum</b> = how many hops a clock is from the master time source (stratum 0 = an atomic or GPS clock). <b>Each hop adds 1</b>, and accuracy gets worse.</div>
+<div class="analogy"><b class="k">Think of it like</b>Everyone setting their watch from the school clock, which was set from the national time signal. A watch set from another watch is one step (stratum) further away.</div>
+<div class="grid2">
+<figure class="dg" data-dg="ntpSeq" data-opts='{"t1":"10:00:00.000","t2":"10:00:05.300","t3":"10:00:05.400","t4":"10:00:00.500"}'><figcaption>T1 and T4 come from the client’s clock; T2 and T3 from the server’s</figcaption></figure>
+<div>
+<div class="callout key"><b>The two formulas</b>
+<b>Offset θ = [(T2 − T1) + (T3 − T4)] / 2</b><br>Positive θ = the client is <b>behind</b>, so it moves forward. Negative θ = it is ahead.<br><br>
+<b>Delay δ = (T4 − T1) − (T3 − T2)</b><br>= total round-trip time minus the server’s “thinking time”.</div>
+<p class="note">Example: (5.3 + 4.9) / 2 = <b>+5.1 s</b>; δ = 0.5 − 0.1 = <b>0.4 s</b>.</p>
+</div>
+</div>
+<h3>The rules</h3>
+<ol class="rules">
+<li><code>ntp master 5</code> = “I am a stratum-5 source using my own clock” (default 8 if no number). Use it only when no reliable outside source exists.</li>
+<li>A client of a stratum-<i>n</i> server becomes stratum <b><i>n</i>+1</b>, and then <b>automatically serves time</b> to others.</li>
+<li>Modes: client/server (<code>ntp server</code>), peer (<code>ntp peer</code>, they sync each other), broadcast (<code>ntp broadcast</code> / <code>ntp broadcast client</code>, configured <b>on an interface</b>).</li>
+<li>Authentication protects against <b>fake NTP replies</b>: an MD5 digest made with a shared key. Keys are <b>case-sensitive</b>.</li>
+<li>Using a pool hostname (<code>0.sg.pool.ntp.org</code>) needs DNS: <code>ip name-server 8.8.8.8</code>.</li>
+</ol>
+<h3><span class="ico">⌨️</span> Commands you must recognise</h3>
+<pre class="cli" data-cli>R1# clock set 9:39:00 05 july 2013                       ! privileged EXEC, not config mode
+R1(config)# clock timezone SGT 8
+R1(config)# ntp master 5
+R2(config)# ntp server 10.1.1.1
+R1(config)# ntp authentication-key 1 md5 NTP-pa55w0rd       ! server: key + trusted-key
+R1(config)# ntp trusted-key 1
+S1(config)# ntp authentication-key 1 md5 NTP-pa55w0rd       ! client: same key…
+S1(config)# ntp authenticate                                ! …ENFORCE authentication
+S1(config)# ntp trusted-key 1
+S1(config)# ntp server 10.0.0.1 key 1
+R1(config)# access-list 20 permit 10.0.0.0 0.0.0.7
+R1(config)# ntp access-group serve-only 20                  ! only these clients may get time
+S1(config)# ntp server vrf Mgmt-vrf 10.0.0.1                ! NTP over the OoB management VRF</pre>
+<table class="t"><tr><th><code>ntp access-group</code></th><th>The listed hosts may…</th></tr>
+<tr><td><b>peer</b></td><td>sync this router <b>and</b> be served by it</td></tr>
+<tr><td><b>serve</b></td><td>be served, plus send control queries</td></tr>
+<tr><td><b>serve-only</b></td><td>only be served (get time)</td></tr>
+<tr><td><b>query-only</b></td><td>only send control queries</td></tr></table>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">show clock: the asterisk</div>
+<div class="row"><code>R2# show clock
+*09:39:12.408 UTC Fri Jul 5 2013</code><span><b>*</b> = time NOT authoritative (not synchronised). Logs show <code>*</code> too.</span></div>
+<div class="row"><code>R2# show clock
+09:43:37.122 UTC Fri Jul 5 2013</code><span>No <b>*</b> = synchronised by NTP.</span></div>
+<div class="row"><code>%SYS-6-CLOCKUPDATE: System clock has been updated from 12:30:54 UTC Tue May 14 2013 to 09:39:00 UTC Fri Jul 5 2013, configured from console by console.</code><span>Logged after <code>clock set</code> (severity 6).</span></div>
+</div>
+<div class="ann"><div class="cap">show ntp associations</div>
+<div class="row hl"><code>R2# show ntp associations</code><span></span></div>
+<div class="row"><code>  address         ref clock       st   when   poll reach  delay  offset   disp</code><span><b>st</b> = the stratum of <b>that server</b>, not of R2.</span></div>
+<div class="row"><code>*~10.1.1.1        127.127.1.1      5     11     64   177  1.312  -0.018  4.298</code><span><b>*</b> = sys.peer (the source R2 is synced to). <b>~</b> = configured. <b>127.127.1.1</b> = the server uses its own clock (<code>ntp master</code>). st 5, so R2 = <b>6</b>.</span></div>
+<div class="row"><code> * sys.peer, # selected, + candidate, - outlyer, x falseticker, ~ configured</code><span><b>x</b> = rejected as a liar (falseticker).</span></div>
+</div>
+<div class="ann"><div class="cap">show ntp status</div>
+<div class="row"><code>Clock is unsynchronized, stratum 16, no reference clock</code><span>Not synced (yet). It can take a few minutes, or there is a key mismatch, an ACL block or no route.</span></div>
+<div class="row"><code>Clock is synchronized, stratum 6, reference is 10.1.1.1</code><span>Synced to a stratum-5 server, so R2 is 6.</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td>R1 <code>ntp master 5</code>, R2 <code>ntp server</code> R1</td><td class="r-ok">R2 = stratum 6</td><td>One hop further.</td></tr>
+<tr><td>Client key “NTP-Pa55w0rd”, server key “NTP-pa55w0rd”, client has <code>ntp authenticate</code></td><td class="r-ko">✘ no sync</td><td>Case-sensitive key mismatch, so the MD5 digest check fails.</td></tr>
+<tr><td>Same mismatch, but the client has <b>no</b> <code>ntp authenticate</code></td><td class="r-mid">syncs anyway</td><td>Authentication isn’t enforced without it.</td></tr>
+<tr><td><code>serve-only 20</code> (permits 10.0.0.0/29). Switch 10.0.0.6 asks for time</td><td class="r-ok">✔ served</td><td>.0–.7 are permitted.</td></tr>
+<tr><td>Same, switch 10.0.0.9</td><td class="r-ko">✘ ignored</td><td>Outside the /29.</td></tr>
+<tr><td><code>ntp server 0.sg.pool.ntp.org</code> with no <code>ip name-server</code></td><td class="r-ko">✘</td><td>The name can’t be resolved.</td></tr>
+<tr><td>Switch’s NTP server is on the OOB network via Mgmt-vrf, configured without <code>vrf</code></td><td class="r-ko">✘</td><td>The global table has no route. Use <code>ntp server vrf Mgmt-vrf …</code>.</td></tr>
+<tr><td>Router clock not synced + time-based ACL</td><td class="r-ko">ACL active at wrong times</td><td>Time-ranges use the router clock.</td></tr></table>
+<div class="tool" id="tool-ntp"><h4>Try it: NTP offset &amp; delay calculator</h4>
+<p class="sub">Enter T1–T4 as hh:mm:ss or hh:mm:ss.fff, or load an example.</p>
+<div class="presets"><button data-ntp="10:00:00|11:00:01|11:00:02|10:00:03">Notes example (1 h)</button><button data-ntp="10:00:00.000|10:00:05.300|10:00:05.400|10:00:00.500">Client behind 5.1 s</button><button data-ntp="11:00:00.100|11:00:00.180|11:00:00.200|11:00:00.300">Client ahead 10 ms</button><button data-ntp="08:00:00.0|08:30:00.4|08:30:00.6|08:00:01.0">30 min behind</button></div>
+<div class="row"><label>T1 (client sends) <input type="text" id="ntp-t1" value="10:00:00.000"></label><label>T2 (server receives) <input type="text" id="ntp-t2" value="10:00:05.300"></label></div>
+<div class="row"><label>T3 (server replies) <input type="text" id="ntp-t3" value="10:00:05.400"></label><label>T4 (client receives) <input type="text" id="ntp-t4" value="10:00:00.500"></label></div>
+<div id="ntp-out"></div></div>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>T1 and T4 are on the <b>client</b> clock; T2 and T3 are on the <b>server</b> clock. Don’t mix up θ’s sign.</li>
+<li>In the request, Transmit = T1. In the reply: Origin = T1, Receive = T2, Transmit = T3. (T4 is not in the packet.)</li>
+<li>The <code>st</code> column is the server’s stratum. The client = st + 1.</li>
+<li><code>ntp authenticate</code> is what makes a client <b>require</b> authentication.</li>
+<li>NTP = <b>UDP</b> 123 (not TCP).</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>T1 = 11:00:00.100, T2 = 11:00:00.180, T3 = 11:00:00.200, T4 = 11:00:00.300. θ and δ?</summary><div class="a">θ = (0.080 − 0.100)/2 = <b>−10 ms</b> (client ahead); δ = 0.200 − 0.020 = <b>180 ms</b>.</div></details>
+<details class="qc"><summary>What does the * at the start of a log timestamp mean?</summary><div class="a">The clock is not authoritative, i.e. not synchronised by NTP.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     12. Syslog
+     ===================================================================== -->
+<section class="topic" id="t-syslog" data-topic="syslog">
+<div class="t-head"><span class="num">12</span><h2>Syslog: logging</h2><span class="lab">Lab 3.5</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>Devices create event messages and can send them to a <b>syslog server</b> (UDP 514). Every message has a <b>severity from 0 (worst) to 7 (debug)</b>. <code>logging trap N</code> sends level N <b>and everything more serious</b>, i.e. levels <b>0 to N</b>.</div>
+<div class="analogy"><b class="k">Think of it like</b>News alerts with an urgency number. “Notify me at level 4” means you also get 0, 1, 2 and 3, because those are more urgent.</div>
+<div class="grid2">
+<table class="t"><tr><th>#</th><th>Name</th><th>Meaning</th></tr>
+<tr><td>0</td><td>emergencies</td><td>system unusable</td></tr><tr><td>1</td><td>alerts</td><td>act immediately</td></tr><tr><td>2</td><td>critical</td><td>critical</td></tr><tr><td>3</td><td>errors</td><td>error</td></tr><tr><td>4</td><td>warnings</td><td>warning</td></tr><tr><td>5</td><td>notifications</td><td>normal but significant</td></tr><tr><td>6</td><td>informational</td><td>info (the trap default)</td></tr><tr><td>7</td><td>debugging</td><td>debug</td></tr></table>
+<div>
+<div class="callout tip"><b>Mnemonic 0 → 7</b>“<b>E</b>very <b>A</b>wesome <b>C</b>isco <b>E</b>ngineer <b>W</b>ill <b>N</b>eed <b>I</b>ce-cream <b>D</b>aily”</div>
+<table class="t"><tr><th>Destination</th><th>Command</th></tr>
+<tr><td>console</td><td><code>logging console</code> / <code>no logging console</code></td></tr>
+<tr><td>SSH/Telnet session</td><td><code>logging monitor</code> + <b><code>terminal monitor</code></b> in that session</td></tr>
+<tr><td>RAM buffer</td><td><code>logging buffered</code> → read with <code>show logging</code></td></tr>
+<tr><td>syslog server</td><td><code>logging host 172.16.2.3</code> + <code>logging trap N</code></td></tr></table>
+</div>
+</div>
+<p>Transport: <b>UDP 514</b> (RFC 5426) by default; secure = <b>TLS over TCP 6514</b> (RFC 5425). Format = RFC 5424. <code>logging synchronous</code> (a line command) stops messages breaking up your typing. <code>service timestamps log datetime msec</code> adds timestamps.</p>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">Reading one syslog message</div>
+<div class="row hl"><code>*Dec 18 17:10:15.079: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/0, changed state to down</code><span></span></div>
+<div class="row"><code>*Dec 18 17:10:15.079</code><span>Timestamp. The <b>*</b> means the clock is not NTP-synced.</span></div>
+<div class="row"><code>%LINEPROTO</code><span>Facility: the part of the device that generated it.</span></div>
+<div class="row"><code>-5-</code><span><b>Severity</b> (5 = notifications). This number decides if it is sent!</span></div>
+<div class="row"><code>UPDOWN</code><span>Mnemonic.</span></div>
+<div class="row"><code>Line protocol on Interface … changed state to down</code><span>Description.</span></div>
+</div>
+<div class="ann"><div class="cap">show logging</div>
+<div class="row hl"><code>R2# show logging</code><span></span></div>
+<div class="row"><code>    Console logging: level debugging, 47 messages logged</code><span>Console default = 7 (everything).</span></div>
+<div class="row"><code>    Monitor logging: level debugging, 0 messages logged</code><span>SSH/Telnet sessions (each needs <code>terminal monitor</code>).</span></div>
+<div class="row"><code>    Buffer logging:  level debugging, 47 messages logged</code><span>Local RAM buffer is on.</span></div>
+<div class="row"><code>    Trap logging: level informational, 49 message lines logged</code><span>Sent to the server: levels <b>0–6</b> (the default).</span></div>
+<div class="row"><code>        Logging to 172.16.2.3  (udp port 514, audit disabled, link up),</code><span>Server IP, protocol and port.</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td>Lab: <code>logging trap warnings</code> (4), then create and delete a loopback (messages 3, 5, 5, 5)</td><td class="r-mid">1 message</td><td>Only %LINK-<b>3</b>-UPDOWN is ≤ 4.</td></tr>
+<tr><td>Same with <code>logging trap 5</code> or <code>6</code></td><td class="r-ok">all 4</td><td>3, 5, 5, 5 are all ≤ 5.</td></tr>
+<tr><td><code>logging trap 3</code> and someone fails a login</td><td class="r-ko">not sent</td><td>LOGIN_FAILED is level 4.</td></tr>
+<tr><td><code>logging trap 4</code> and an ACL with the <code>log</code> keyword</td><td class="r-ko">not sent</td><td>IPACCESSLOGP is level 6.</td></tr>
+<tr><td>Admin on SSH sees no messages</td><td class="r-mid">type <code>terminal monitor</code></td><td><code>logging monitor</code> alone isn’t enough.</td></tr>
+<tr><td><code>no logging console</code></td><td class="r-mid">console only</td><td>SSH, buffer and server are unaffected.</td></tr>
+<tr><td><code>logging trap debugging</code> on 200 devices</td><td class="r-ko">flood</td><td>It wastes bandwidth and storage and buries real alerts. Too severe (0–1) misses events.</td></tr></table>
+<div class="tool" id="tool-sys"><h4>Try it: which messages reach the syslog server?</h4>
+<p class="sub">Click a <code>logging trap</code> level.</p>
+<div class="presets"><button class="lvl-btn" data-l="0">0 emergencies</button><button class="lvl-btn" data-l="1">1 alerts</button><button class="lvl-btn" data-l="2">2 critical</button><button class="lvl-btn" data-l="3">3 errors</button><button class="lvl-btn" data-l="4">4 warnings</button><button class="lvl-btn" data-l="5">5 notifications</button><button class="lvl-btn" data-l="6">6 informational</button><button class="lvl-btn" data-l="7">7 debugging</button></div>
+<div id="sys-out"></div></div>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li><b>Smaller number = more serious.</b> <code>trap N</code> = 0..N.</li>
+<li>Read the digit in <code>%FACILITY-<b>n</b>-MNEMONIC</code>, not the words.</li>
+<li>Default trap level = informational (6); console default = debugging (7).</li>
+<li>SSH sessions need <code>terminal monitor</code>.</li>
+<li>Syslog = <b>UDP</b> 514; secure = TLS/TCP 6514.</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary><code>logging trap errors</code>: is %SEC_LOGIN-4-LOGIN_FAILED sent?</summary><div class="a">No. errors = 3, and this message is level 4.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     13. NetFlow
+     ===================================================================== -->
+<section class="topic" id="t-nf" data-topic="netflow">
+<div class="t-head"><span class="num">13</span><h2>Flexible NetFlow</h2><span class="lab">Lab 3.6</span><button class="done-btn">Mark as understood</button></div>
+<div class="t-body">
+<div class="plain"><b class="k">In plain words</b>NetFlow keeps <b>statistics</b> about traffic passing through a router, such as who talked to whom, on which ports, how many packets and bytes, and when. It stores them in a <b>cache</b> and <b>exports</b> them to a <b>collector</b>. It never stores the content. A <b>flow</b> = packets going <b>one way</b> that share the same <b>key fields</b>.</div>
+<div class="analogy"><b class="k">Think of it like</b>A phone bill: it lists every call (who, to whom, when, how long) but not what was said. Each direction of a call is a separate line on the bill.</div>
+<div class="grid2">
+<figure class="dg" data-dg="netflowLab"><figcaption>Lab 3.6: R1 G0/0/1 = 192.168.1.1, collector PC1 = .50</figcaption></figure>
+<div>
+<h3>7 classic key fields</h3>
+<p>Source IP · Destination IP · Source port · Destination port · L3 protocol · ToS (DSCP) · Input interface. A different value in <b>any</b> key field = a <b>new flow</b>.</p>
+<h3>4 configuration steps</h3>
+<ol class="rules"><li><b>flow record</b>: <code>match</code> = key fields, <code>collect</code> = counters</li><li><b>flow exporter</b>: where to send (IP, UDP port, v9)</li><li><b>flow monitor</b>: record + exporter + cache timeouts</li><li>apply to the interface: <code>ip flow monitor NAME input|output</code></li></ol>
+</div>
+</div>
+<pre class="cli" data-cli>R1(config)# flow record CCNP8-CUSTOM-OUT
+R1(config-flow-record)# match ipv4 destination address           ! key
+R1(config-flow-record)# match transport destination-port         ! key
+R1(config-flow-record)# collect counter bytes                    ! statistic
+R1(config-flow-record)# collect counter packets
+R1(config)# flow exporter CCNP8-COLLECTOR-HOST
+R1(config-flow-exporter)# destination 192.168.1.50
+R1(config-flow-exporter)# export-protocol netflow-v9
+R1(config-flow-exporter)# transport udp 9999                     ! must match the collector's port
+R1(config)# flow monitor CCNP8-INBOUND-MONITOR
+R1(config-flow-monitor)# record netflow ipv4 original-input      ! predefined 7-key record
+R1(config-flow-monitor)# exporter CCNP8-COLLECTOR-HOST
+R1(config-flow-monitor)# cache timeout active 30
+R1(config)# interface g0/0/1
+R1(config-if)# ip flow monitor CCNP8-INBOUND-MONITOR input</pre>
+<h3><span class="ico">🖥️</span> Outputs to know</h3>
+<div class="ann"><div class="cap">show flow exporter</div>
+<div class="row"><code>Flow Exporter CCNP8-COLLECTOR-HOST:
+  Export protocol: NetFlow Version 9</code><span></span></div>
+<div class="row"><code>    Destination IP address: 192.168.1.50
+    Source IP address: 192.168.1.1</code><span>No <code>source</code> command, so it uses the exit interface IP. With <code>source lo0</code> it becomes 10.0.0.1.</span></div>
+<div class="row"><code>    Transport Protocol: UDP
+    Destination Port: 9999</code><span>The collector must listen on this port.</span></div>
+</div>
+<div class="ann"><div class="cap">show flow monitor … statistics / cache</div>
+<div class="row"><code>  Inactive Timeout: 15 secs
+  Active Timeout: 30 secs</code><span>Inactive: a flow with no packets for 15 s is exported and removed. Active: a long flow is exported every 30 s (default 1800 s).</span></div>
+<div class="row"><code>Current entries: 2
+Flows added: 103
+Flows aged: 101
+  - Active timeout   ( 30 secs) 38
+  - Inactive timeout ( 15 secs) 63</code><span>How many flows exist now, have been created, and have expired (and why).</span></div>
+<div class="row hl"><code>IPV4 SOURCE ADDRESS:      192.168.1.75
+IPV4 DESTINATION ADDRESS: 10.0.0.1</code><span>PC2 → R1 Loopback0.</span></div>
+<div class="row"><code>TRNS SOURCE PORT:         0
+TRNS DESTINATION PORT:    2048</code><span>For ICMP, the “port” = <b>type × 256 + code</b>: echo request (8,0) = <b>2048</b>; echo-reply (0,0) = 0.</span></div>
+<div class="row"><code>INTERFACE INPUT:          Gi0/0/1
+IP PROTOCOL:              1</code><span>1 = ICMP, 6 = TCP, 17 = UDP.</span></div>
+<div class="row"><code>counter bytes:            12024
+counter packets:          8</code><span>12024 / 8 = 1503 bytes each = <code>ping -l 1475</code> + 8 (ICMP) + 20 (IP).</span></div>
+</div>
+<h3><span class="ico">🧪</span> Scenarios: what happens if…</h3>
+<table class="t scen"><tr><th>Scenario</th><th>Result</th><th>Why</th></tr>
+<tr><td>PC sends 100 pings; monitors <b>in</b> and <b>out</b> on the PC-facing interface</td><td class="r-mid">2 flows</td><td>Requests = 1 flow (in); replies = 1 flow (out). Flows are one-way.</td></tr>
+<tr><td>3 HTTP connections from one PC (7-key record)</td><td class="r-mid">3 flows</td><td>Different source ports.</td></tr>
+<tr><td>Same, but the record only matches dst IP + dst port</td><td class="r-mid">1 flow</td><td>Source ports aren’t keys, so they merge.</td></tr>
+<tr><td>Exporter on UDP 9999, collector listens on 9996</td><td class="r-ko">collector empty</td><td>Wireshark sees the packets, but the analyzer ignores them. Fix <code>transport udp</code>.</td></tr>
+<tr><td>Monitor created but no <code>ip flow monitor</code> on the interface</td><td class="r-ko">nothing collected</td><td>Step 4 is missing.</td></tr>
+<tr><td>Monitor without an exporter</td><td class="r-mid">local cache only</td><td><code>show flow monitor … cache</code> works, but nothing is sent.</td></tr>
+<tr><td>Add <code>source lo0</code> to the exporter</td><td class="r-mid">source = 10.0.0.1</td><td>A Wireshark filter on <code>ip.src == 192.168.1.1</code> now shows nothing.</td></tr>
+<tr><td>SYN flood seen in NetFlow</td><td class="r-mid">many tiny flows</td><td>Thousands of 1–2 packet flows to :80 from many sources. (Slowloris = many long, low-byte flows from one IP.)</td></tr></table>
+<div class="tool" id="tool-nf"><h4>Try it: count the flows</h4>
+<p class="sub">Choose the key fields of the flow record (input monitor on R1 G0/0/1) and which traffic happens.</p>
+<div class="presets"><button data-nfpreset="all">Classic 7 keys</button><button data-nfpreset="dst">Only dst IP + dst port</button></div>
+<div class="checks">
+<label><input type="checkbox" id="nf-k-srcip" checked> Source IP</label><label><input type="checkbox" id="nf-k-dstip" checked> Destination IP</label>
+<label><input type="checkbox" id="nf-k-sport" checked> Source port</label><label><input type="checkbox" id="nf-k-dport" checked> Destination port</label>
+<label><input type="checkbox" id="nf-k-proto" checked> Protocol</label><label><input type="checkbox" id="nf-k-tos" checked> ToS</label>
+<label><input type="checkbox" id="nf-k-inif" checked> Input interface</label>
+</div>
+<div class="checks">
+<label><input type="checkbox" id="nf-s-0" checked> PC2 pings 10.0.0.1 (100 packets)</label>
+<label><input type="checkbox" id="nf-s-1" checked> PC1 pings 10.0.0.1 (50 packets)</label>
+<label><input type="checkbox" id="nf-s-2" checked> A1 Telnet to 10.0.0.1</label>
+<label><input type="checkbox" id="nf-s-3" checked> PC1 HTTP connection #1</label>
+<label><input type="checkbox" id="nf-s-4" checked> PC1 HTTP connection #2</label>
+<label><input type="checkbox" id="nf-s-5" checked> PC1 HTTP connection #3</label>
+<label><input type="checkbox" id="nf-s-6"> D1 NTP to R1 (lab NTP client)</label>
+<label><input type="checkbox" id="nf-s-7"> A1 NTP to R1 (lab NTP client)</label>
+</div>
+<div id="nf-out"></div></div>
+<div class="traps"><h4>⚠ Traps</h4><ul>
+<li>A flow is <b>one direction</b> only. Replies are a different flow, seen by an <b>output</b> monitor.</li>
+<li>Count flows by the <b>key</b> (match) fields only. <code>collect</code> fields never split flows.</li>
+<li>NetFlow = statistics, <b>not payload</b>, and it doesn’t block anything.</li>
+<li>The exporter’s <code>destination</code> and <code>transport udp</code> port must match the collector.</li>
+<li>Variants: NetFlow v9 (RFC 3954), <b>IPFIX (RFC 7011)</b>, the IETF standard based on v9, sFlow (sampling), JFlow (Juniper).</li>
+</ul></div>
+<h3><span class="ico">✅</span> Quick check</h3>
+<details class="qc"><summary>What is TRNS DESTINATION PORT 2048 in an ICMP flow?</summary><div class="a">ICMP type 8, code 0 (8 × 256 + 0), an echo request.</div></details>
+<details class="qc"><summary>Put the 4 steps in order.</summary><div class="a">flow record → flow exporter → flow monitor (record + exporter) → <code>ip flow monitor</code> on the interface.</div></details>
+</div>
+</section>
+
+<!-- =====================================================================
+     Last-minute checklist
+     ===================================================================== -->
+<section class="topic" id="t-check">
+<div class="t-head"><span class="num">★</span><h2>Last-minute checklist (read this before the quiz)</h2></div>
+<div class="t-body check-all">
+<div class="grid2">
+<div>
+<h4>ACL</h4><ul>
+<li>First match wins; invisible <code>deny any</code>, never counted.</li>
+<li>Standard → near the destination; extended → near the source.</li>
+<li>No-source ping = exit interface IP.</li>
+<li>IN filters traffic to the router; OUT skips the router’s own traffic.</li>
+<li>Check the reply; port after the source = source port; no <code>eq</code> for ICMP.</li>
+<li><code>no access-list N …</code> deletes everything; a new access-group replaces the old one.</li></ul>
+<h4>Firepower/ASA</h4><ul>
+<li>High → low OK; low → high needs an ACL; same level blocked.</li>
+<li>Only “inside” = 100 automatically; others = 0.</li>
+<li>Ping fails because of the <b>reply</b> → <code>inspect icmp</code>.</li>
+<li>ACL inbound where traffic enters; subnet masks; <code>access-group … in interface …</code>.</li>
+<li>An interface ACL replaces the default for that interface.</li>
+<li>write erase → reload → answer <b>N</b>.</li></ul>
+<h4>SYN flood / Slowloris</h4><ul>
+<li>SYN flood: volumetric, embryonic → <code>embryonic-conn-max</code> (TCP Intercept).</li>
+<li>Slowloris: low-rate, established, one PC → <code>per-client-max</code>.</li>
+<li>ACLs can’t help; the policy must be on the interface the attack crosses.</li>
+<li>slowhttptest “NO” after the defence is misleading (its own IP is limited).</li></ul>
+<h4>OoB, VRF, SSH, Proxmox</h4><ul>
+<li><code>vrf forwarding</code> wipes the IP; use <code>ping vrf</code> / <code>show ip route vrf</code>.</li>
+<li>Jump host: 1 entry point and auditing, but a target and single point of failure; it must not route.</li>
+<li>SSH: hostname + domain + RSA ≥ 768 + <code>login local</code> + <code>transport input ssh</code> (+ <code>vrf-also</code>).</li>
+<li>BMC = IPMI port 10.0.0.1; Proxmox = LAN 1 10.0.0.10:8006; LAN 3 = eno5.</li></ul>
+</div>
+<div>
+<h4>AAA</h4><ul>
+<li>ERROR (dead) → next method; FAIL (said no) → stop.</li>
+<li>Default list covers console + VTY; end with <code>local</code>.</li>
+<li>TACACS+: TCP 49, whole body encrypted, separate A/A/A, command authorization and accounting.</li>
+<li>RADIUS: UDP 1812/1813, password-only encryption, authN + authZ together.</li>
+<li>Type 7 reversible; secret 5/8/9 hashes. Quiet-mode ACL = who is still allowed.</li>
+<li>Moving a command up removes it from lower levels; level 0 = 5 commands.</li>
+<li>Server privilege levels/views need <code>aaa authorization exec</code>.</li>
+<li>Views: enable/exit/show parser always; superview = views only; max 15.</li>
+<li>Command accounting = TACACS+ only; <code>commands 15</code> = level-15 commands.</li></ul>
+<h4>NTP / Syslog</h4><ul>
+<li>θ = ((T2−T1)+(T3−T4))/2; δ = (T4−T1)−(T3−T2).</li>
+<li>Client stratum = server stratum + 1; <code>*</code> = sys.peer; 127.127.1.1 = ntp master.</li>
+<li>Keys are case-sensitive; <code>ntp authenticate</code> enforces them.</li>
+<li>Syslog: smaller = worse; trap N sends 0..N; LOGIN_FAILED = 4, ACL log = 6, LINK-3 / LINEPROTO-5.</li>
+<li><code>*</code> on a timestamp = not synced; SSH needs <code>terminal monitor</code>; UDP 514.</li></ul>
+<h4>NetFlow</h4><ul>
+<li>A flow is one-way; count by key fields only; ICMP echo = 2048.</li>
+<li>record → exporter → monitor → interface; the port must match the collector.</li>
+<li>Active timeout = periodic export; inactive = idle expiry.</li></ul>
+</div>
+</div>
+<p style="margin-top:14px"><a class="btn" href="quiz.html#mock">Test yourself: Mock quiz (18 Q) →</a> <a class="btn ghost" href="quiz.html#A">Full Set A →</a> <a class="btn ghost" href="guide.html">Full study guide →</a></p>
+</div>
+</section>
+
+</main>
+<a class="fab" href="#topics">↑ Topics</a>
+
 <script src="../assets/diagram.js"></script>
-<script src="../assets/setA.js"></script>
-<script src="../assets/setB.js"></script>
-<script src="../assets/setC.js"></script>
-<script src="../assets/app.js"></script>
+<script src="../assets/learn.js"></script>
+<script>
+// Format command blocks: prompts dim, typed commands bold, "  ! comments" grey.
+(function () {
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  document.querySelectorAll('pre[data-cli]').forEach((pre) => {
+    pre.innerHTML = pre.textContent.split('\n').map((line) => {
+      let cm = '';
+      const ci = line.search(/\s{2,}!\s/);
+      if (ci > 0) { cm = line.slice(ci); line = line.slice(0, ci); }
+      const m = line.match(/^(\s*)([A-Za-z0-9_\-.@:~\\/]+(?:\([A-Za-z0-9\-]+\))?(?:\s?[#>$]))(\s?)(.*)$/);
+      let h;
+      if (m) h = m[1] + '<span class="pr">' + esc(m[2]) + '</span>' + m[3] + '<b>' + esc(m[4]) + '</b>';
+      else if (/^\s*!/.test(line)) h = '<span class="cm">' + esc(line) + '</span>';
+      else h = esc(line);
+      return h + (cm ? '<span class="cm">' + esc(cm) + '</span>' : '');
+    }).join('\n');
+  });
+})();
+</script>
 </body>
 </html>
